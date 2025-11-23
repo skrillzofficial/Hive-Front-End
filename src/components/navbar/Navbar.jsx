@@ -8,6 +8,9 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
+  // Mock cart count - In production, this would come from context/state management
+  const cartCount = 3; 
+
   // Close mobile menu when navigating
   const handleMobileNavClick = () => {
     setMobileMenuOpen(false);
@@ -85,13 +88,15 @@ const Navbar = () => {
             {/* Cart Icon with Badge */}
             <button 
               onClick={() => navigate('/cart')}
-              className="text-gray-700 hover:text-black transition-colors relative"
+              className="text-gray-700 hover:text-black transition-colors relative group"
               aria-label="Shopping Cart"
             >
               <ShoppingCart size={22} strokeWidth={1.5} />
-              <span className="absolute -top-2 -right-2 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
-                0
-              </span>
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold group-hover:scale-110 transition-transform">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
             </button>
 
             {/* Mobile Menu Button */}

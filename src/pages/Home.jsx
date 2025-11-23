@@ -88,12 +88,12 @@ const Home = () => {
                 index === currentSlide ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              {/* Split Layout */}
-              <div className="container mx-auto w-11/12 h-full">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full items-center">
+              {/* Desktop: Split Layout */}
+              <div className="hidden lg:block container mx-auto w-11/12 h-full">
+                <div className="grid grid-cols-2 gap-8 h-full items-center">
                   
                   {/* Left Side - Text Content */}
-                  <div className="flex flex-col justify-center z-10 order-2 lg:order-1 px-4 lg:px-0">
+                  <div className="flex flex-col justify-center z-10">
                     <p className="text-white text-sm lg:text-base font-light mb-3 tracking-widest uppercase">
                       {slide.subtitle}
                     </p>
@@ -130,17 +130,15 @@ const Home = () => {
                   </div>
 
                   {/* Right Side - Product Image */}
-                  <div className="flex items-center justify-center order-1 lg:order-2 h-full py-8 lg:py-0">
-                    <div className="relative w-full max-w-md lg:max-w-lg h-full flex items-center justify-center">
-                      <div className="relative w-full aspect-square lg:aspect-auto lg:h-[500px]">
-                        <img
-                          src={slide.image}
-                          alt={slide.title}
-                          className="w-full h-full object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
-                        />
-                        {/* Decorative background */}
-                        <div className="absolute inset-0 bg-gradient-radial from-white/5 to-transparent -z-10 blur-3xl"></div>
-                      </div>
+                  <div className="flex items-center justify-center h-full">
+                    <div className="relative w-full max-w-lg h-[500px] flex items-center justify-center">
+                      <img
+                        src={slide.image}
+                        alt={slide.title}
+                        className="w-full h-full object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                      />
+                      {/* Decorative background */}
+                      <div className="absolute inset-0 bg-gradient-radial from-white/5 to-transparent -z-10 blur-3xl"></div>
                       
                       {/* Product Badge */}
                       {slide.product.tags.includes('new-arrival') && (
@@ -155,9 +153,74 @@ const Home = () => {
                       )}
                     </div>
                   </div>
-
                 </div>
               </div>
+
+              {/* Mobile/Tablet: Overlay Layout */}
+              <div className="lg:hidden relative w-full h-full">
+                {/* Product Image Background */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    className="w-full h-full object-contain opacity-40"
+                  />
+                  {/* Dark overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
+                </div>
+
+                {/* Text Content Overlay */}
+                <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-6 z-10">
+                  <div className="max-w-lg">
+                    {/* Product Badge */}
+                    {slide.product.tags.includes('new-arrival') && (
+                      <div className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg mb-4">
+                        New Arrival
+                      </div>
+                    )}
+                    {slide.product.salePrice && (
+                      <div className="inline-block bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg mb-4">
+                        {Math.round(((slide.product.price - slide.product.salePrice) / slide.product.price) * 100)}% OFF
+                      </div>
+                    )}
+                    
+                    <p className="text-white text-xs sm:text-sm font-light mb-2 tracking-widest uppercase">
+                      {slide.subtitle}
+                    </p>
+                    <h1 className="text-white text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
+                      {slide.title}
+                    </h1>
+                    <p className="text-white/90 text-sm sm:text-base mb-6">
+                      {slide.product.description}
+                    </p>
+                    <div className="flex items-center justify-center gap-3 mb-6">
+                      <span className="text-white text-2xl sm:text-3xl font-bold">
+                        ${slide.product.salePrice || slide.product.price}
+                      </span>
+                      {slide.product.salePrice && (
+                        <span className="text-white/60 text-lg sm:text-xl line-through">
+                          ${slide.product.price}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <button 
+                        onClick={() => handleCarouselButtonClick(slide.category)}
+                        className="bg-white text-black px-6 py-3 font-semibold text-xs sm:text-sm tracking-wider hover:bg-gray-100 transition-all duration-300 uppercase"
+                      >
+                        {slide.buttonText}
+                      </button>
+                      <button 
+                        onClick={() => navigate(`/product/${slide.product.slug}`)}
+                        className="bg-transparent border-2 border-white text-white px-6 py-3 font-semibold text-xs sm:text-sm tracking-wider hover:bg-white hover:text-black transition-all duration-300 uppercase"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           ))}
         </div>

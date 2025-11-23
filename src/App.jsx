@@ -10,6 +10,7 @@ import Navbar from "./components/navbar/Navbar";
 import Home from "../src/pages/Home";
 import ProductDetails from "../src/pages/ProductDetails";
 import Shop from "../src/pages/Shop";
+import Cart from "../src/pages/Cart"
 
 // Layout Component
 const Layout = ({ children }) => {
@@ -36,6 +37,9 @@ const AppRoutes = () => {
           <Route path="/shop" element={<Shop />} />
           <Route path="/shop/:category" element={<Shop />} />
           <Route path="/shop/:category/:subcategory" element={<Shop />} />
+
+          {/*Cart Route */}
+          <Route path="/cart" element={<Cart />}/>
 
           {/* Product Details Route */}
           <Route path="/product/:slug" element={<ProductDetails />} />
