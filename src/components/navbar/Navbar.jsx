@@ -1,15 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const searchRef = useRef(null);
+  
+  // Get cart count from context
+  const { getCartCount } = useCart();
+  const cartCount = getCartCount();
 
-  // Mock cart count - In production, this would come from context/state management
-  const cartCount = 3; 
+  // Close search when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchOpen(false);
+        setSearchQuery('');
+      }
+    };
+
+    if (searchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [searchOpen]);
 
   // Close mobile menu when navigating
   const handleMobileNavClick = () => {
@@ -27,18 +48,23 @@ const Navbar = () => {
   };
 
   // NavLink active class helper
-  const getNavLinkClass = ({ isActive }) => 
+  const getNavLinkClass = ({ isActive }) =>
     `text-gray-700 hover:text-black transition-colors font-medium uppercase text-sm tracking-wide ${
       isActive ? 'text-black font-bold' : ''
     }`;
 
-  const getMobileNavLinkClass = ({ isActive }) => 
+  const getMobileNavLinkClass = ({ isActive }) =>
     `text-gray-700 hover:text-black transition-colors font-medium uppercase text-sm tracking-wide py-2 ${
       isActive ? 'text-black font-bold' : ''
     }`;
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
+      {/* Top Bar - Announcement */}
+      <div className="bg-black text-white text-center py-2 text-xs sm:text-sm">
+        <p>Free shipping on orders over $50 | Shop Now</p>
+      </div>
+
       {/* Main Navbar */}
       <div className="container mx-auto w-11/12">
         <div className="flex justify-between items-center h-16 lg:h-20">
@@ -68,7 +94,7 @@ const Navbar = () => {
           {/* Right Side Icons */}
           <div className="flex items-center space-x-4 lg:space-x-6">
             {/* Search Icon */}
-            <button 
+            <button
               onClick={() => setSearchOpen(!searchOpen)}
               className="text-gray-700 hover:text-black transition-colors"
               aria-label="Search"
@@ -77,16 +103,16 @@ const Navbar = () => {
             </button>
 
             {/* User Icon */}
-            <button 
-              onClick={() => navigate('/account')}
+            <button
+              onClick={() => navigate('/profile')}
               className="text-gray-700 hover:text-black transition-colors"
-              aria-label="Account"
+              aria-label="Profile"
             >
               <User size={22} strokeWidth={1.5} />
             </button>
 
             {/* Cart Icon with Badge */}
-            <button 
+            <button
               onClick={() => navigate('/cart')}
               className="text-gray-700 hover:text-black transition-colors relative group"
               aria-label="Shopping Cart"
@@ -112,24 +138,28 @@ const Navbar = () => {
 
         {/* Search Bar */}
         {searchOpen && (
-          <div className="py-4 border-t border-gray-200 bg-white">
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
+          <div ref={searchRef} className="py-4 border-t border-gray-200 bg-white">
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch(e);
+                  }
+                }}
                 placeholder="Search products..."
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
                 autoFocus
               />
               <button
-                type="submit"
+                onClick={handleSearch}
                 className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium"
               >
                 Search
               </button>
               <button
-                type="button"
                 onClick={() => {
                   setSearchOpen(false);
                   setSearchQuery('');
@@ -138,7 +168,7 @@ const Navbar = () => {
               >
                 <X size={20} />
               </button>
-            </form>
+            </div>
           </div>
         )}
 
@@ -146,29 +176,29 @@ const Navbar = () => {
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-gray-200 bg-white py-4">
             <div className="flex flex-col space-y-4">
-              <NavLink 
-                to="/" 
+              <NavLink
+                to="/"
                 className={getMobileNavLinkClass}
                 onClick={handleMobileNavClick}
               >
                 Home
               </NavLink>
-              <NavLink 
-                to="/shop" 
+              <NavLink
+                to="/shop"
                 className={getMobileNavLinkClass}
                 onClick={handleMobileNavClick}
               >
                 Shop
               </NavLink>
-              <NavLink 
-                to="/shop/men" 
+              <NavLink
+                to="/shop/men"
                 className={getMobileNavLinkClass}
                 onClick={handleMobileNavClick}
               >
                 Men
               </NavLink>
-              <NavLink 
-                to="/shop/women" 
+              <NavLink
+                to="/shop/women"
                 className={getMobileNavLinkClass}
                 onClick={handleMobileNavClick}
               >
@@ -180,36 +210,36 @@ const Navbar = () => {
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-2">
                   Categories
                 </p>
-                <NavLink 
-                  to="/shop/all/shirts" 
+                <NavLink
+                  to="/shop/all/shirts"
                   className="text-gray-600 hover:text-black transition-colors text-sm py-2 block px-2"
                   onClick={handleMobileNavClick}
                 >
                   Shirts
                 </NavLink>
-                <NavLink 
-                  to="/shop/all/polos" 
+                <NavLink
+                  to="/shop/all/polos"
                   className="text-gray-600 hover:text-black transition-colors text-sm py-2 block px-2"
                   onClick={handleMobileNavClick}
                 >
                   Polos
                 </NavLink>
-                <NavLink 
-                  to="/shop/all/hoodies" 
+                <NavLink
+                  to="/shop/all/hoodies"
                   className="text-gray-600 hover:text-black transition-colors text-sm py-2 block px-2"
                   onClick={handleMobileNavClick}
                 >
                   Hoodies
                 </NavLink>
-                <NavLink 
-                  to="/shop/all/caps" 
+                <NavLink
+                  to="/shop/all/caps"
                   className="text-gray-600 hover:text-black transition-colors text-sm py-2 block px-2"
                   onClick={handleMobileNavClick}
                 >
                   Caps
                 </NavLink>
-                <NavLink 
-                  to="/shop/all/tanks" 
+                <NavLink
+                  to="/shop/all/tanks"
                   className="text-gray-600 hover:text-black transition-colors text-sm py-2 block px-2"
                   onClick={handleMobileNavClick}
                 >

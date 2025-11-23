@@ -1,81 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { X, Plus, Minus, ShoppingBag, ArrowLeft, Trash2, Tag } from 'lucide-react';
-import { products } from '../data/ProductData';
+import { Plus, Minus, ShoppingBag, ArrowLeft, Trash2, Tag } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 const Cart = () => {
   const navigate = useNavigate();
-  
-  // Mock cart items - In production, this would come from context/state management
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      product: products.find(p => p.id === 'hd001'), // Hive Privilege Hoodie Grey
-      selectedSize: 'L',
-      selectedColor: 'Grey',
-      quantity: 1
-    },
-    {
-      id: 2,
-      product: products.find(p => p.id === 'ts003'), // Hive Property T-Shirt Black
-      selectedSize: 'M',
-      selectedColor: 'Black',
-      quantity: 2
-    },
-    {
-      id: 3,
-      product: products.find(p => p.id === 'cp001'), // Hive Cap Black Denim
-      selectedSize: 'One Size',
-      selectedColor: 'Black Denim',
-      quantity: 1
-    }
-  ]);
-
-  // Update quantity
-  const updateQuantity = (itemId, change) => {
-    setCartItems(prevItems =>
-      prevItems.map(item => {
-        if (item.id === itemId) {
-          const newQuantity = item.quantity + change;
-          if (newQuantity > 0 && newQuantity <= item.product.stockCount) {
-            return { ...item, quantity: newQuantity };
-          }
-        }
-        return item;
-      })
-    );
-  };
-
-  // Remove item
-  const removeItem = (itemId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
-  };
+  const { cartItems, updateQuantity, removeFromCart, getCartSubtotal, getTotalSavings } = useCart();
 
   // Calculate totals
-  const calculateSubtotal = () => {
-    return cartItems.reduce((total, item) => {
-      const price = item.product.salePrice || item.product.price;
-      return total + (price * item.quantity);
-    }, 0);
-  };
-
-  const subtotal = calculateSubtotal();
+  const subtotal = getCartSubtotal();
   const shipping = subtotal > 100 ? 0 : 10;
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + shipping + tax;
-
-  // Calculate savings
-  const calculateSavings = () => {
-    return cartItems.reduce((savings, item) => {
-      if (item.product.salePrice) {
-        const discount = (item.product.price - item.product.salePrice) * item.quantity;
-        return savings + discount;
-      }
-      return savings;
-    }, 0);
-  };
-
-  const totalSavings = calculateSavings();
+  const totalSavings = getTotalSavings();
 
   if (cartItems.length === 0) {
     return (
@@ -123,16 +60,16 @@ const Cart = () => {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg p-4 lg:p-6 shadow-sm">
+              <div key={item.cartItemId} className="bg-white rounded-lg p-4 lg:p-6 shadow-sm">
                 <div className="flex gap-4 lg:gap-6">
                   {/* Product Image */}
                   <Link 
-                    to={`/product/${item.product.slug}`}
+                    to={`/product/${item.slug}`}
                     className="flex-shrink-0 w-24 h-24 lg:w-32 lg:h-32 bg-gray-100 rounded-lg overflow-hidden group"
                   >
                     <img
-                      src={item.product.images[0]}
-                      alt={item.product.name}
+                      src={item.images[0]}
+                      alt={item.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </Link>
@@ -142,20 +79,24 @@ const Cart = () => {
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1 min-w-0 pr-4">
                         <Link 
-                          to={`/product/${item.product.slug}`}
+                          to={`/product/${item.slug}`}
                           className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2"
                         >
-                          {item.product.name}
+                          {item.name}
                         </Link>
                         <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600">
-                          <span>Size: <span className="font-medium text-gray-900">{item.selectedSize}</span></span>
-                          <span>Color: <span className="font-medium text-gray-900">{item.selectedColor}</span></span>
+                          {item.selectedSize && (
+                            <span>Size: <span className="font-medium text-gray-900">{item.selectedSize}</span></span>
+                          )}
+                          {item.selectedColor && (
+                            <span>Color: <span className="font-medium text-gray-900">{item.selectedColor}</span></span>
+                          )}
                         </div>
                       </div>
                       
                       {/* Remove Button */}
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeFromCart(item.cartItemId)}
                         className="text-gray-400 hover:text-red-600 transition-colors p-1"
                         aria-label="Remove item"
                       >
@@ -168,7 +109,7 @@ const Cart = () => {
                       {/* Quantity Controls */}
                       <div className="flex items-center border-2 border-gray-200 rounded-lg">
                         <button
-                          onClick={() => updateQuantity(item.id, -1)}
+                          onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
                           className="p-2 hover:bg-gray-100 transition-colors"
                           disabled={item.quantity <= 1}
                         >
@@ -178,9 +119,9 @@ const Cart = () => {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.id, 1)}
+                          onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
                           className="p-2 hover:bg-gray-100 transition-colors"
-                          disabled={item.quantity >= item.product.stockCount}
+                          disabled={item.quantity >= item.stockCount}
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -188,28 +129,28 @@ const Cart = () => {
 
                       {/* Price */}
                       <div className="text-right">
-                        {item.product.salePrice ? (
+                        {item.salePrice ? (
                           <div>
                             <p className="text-lg font-bold text-red-600">
-                              ${(item.product.salePrice * item.quantity).toFixed(2)}
+                              ${(item.salePrice * item.quantity).toFixed(2)}
                             </p>
                             <p className="text-sm text-gray-500 line-through">
-                              ${(item.product.price * item.quantity).toFixed(2)}
+                              ${(item.price * item.quantity).toFixed(2)}
                             </p>
                           </div>
                         ) : (
                           <p className="text-lg font-bold text-gray-900">
-                            ${(item.product.price * item.quantity).toFixed(2)}
+                            ${(item.price * item.quantity).toFixed(2)}
                           </p>
                         )}
                       </div>
                     </div>
 
                     {/* Sale Badge */}
-                    {item.product.salePrice && (
+                    {item.salePrice && (
                       <div className="mt-3 inline-flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-semibold">
                         <Tag className="w-3 h-3" />
-                        Save ${((item.product.price - item.product.salePrice) * item.quantity).toFixed(2)}
+                        Save ${((item.price - item.salePrice) * item.quantity).toFixed(2)}
                       </div>
                     )}
                   </div>

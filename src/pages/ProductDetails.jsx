@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, ShoppingCart, Heart, Truck, RotateCcw, Shield, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { getProductBySlug, products } from '../data/ProductData';
+import { useCart } from '../context/CartContext';
 
 const ProductDetails = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { addToCart, isInCart } = useCart();
+  
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -13,6 +16,7 @@ const ProductDetails = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
     // Fetch product by slug from URL params
@@ -21,6 +25,10 @@ const ProductDetails = () => {
       if (foundProduct) {
         setProduct(foundProduct);
         setSelectedColor(foundProduct.colors[0]);
+        // Auto-select first size if only one size available
+        if (foundProduct.sizes.length === 1) {
+          setSelectedSize(foundProduct.sizes[0]);
+        }
         setLoading(false);
       } else {
         // Product not found, redirect or show error
@@ -30,6 +38,9 @@ const ProductDetails = () => {
       // No slug provided, show first product as demo
       setProduct(products[0]);
       setSelectedColor(products[0].colors[0]);
+      if (products[0].sizes.length === 1) {
+        setSelectedSize(products[0].sizes[0]);
+      }
       setLoading(false);
     }
   }, [slug]);
@@ -39,8 +50,32 @@ const ProductDetails = () => {
       alert('Please select a size');
       return;
     }
+    
+    // Add to cart using context
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product.id, selectedSize, selectedColor, 1);
+    }
+    
+    // Show success feedback
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+    
     console.log('Added to cart:', { product, selectedSize, selectedColor, quantity });
-    alert('Product added to cart!');
+  };
+
+  const handleBuyNow = () => {
+    if (!selectedSize) {
+      alert('Please select a size');
+      return;
+    }
+    
+    // Add to cart
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product.id, selectedSize, selectedColor, 1);
+    }
+    
+    // Navigate to cart
+    navigate('/cart');
   };
 
   const handleQuantityChange = (change) => {
@@ -66,7 +101,7 @@ const ProductDetails = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading product...</p>
         </div>
       </div>
@@ -81,7 +116,7 @@ const ProductDetails = () => {
           <p className="text-gray-600 mb-4">The product you're looking for doesn't exist.</p>
           <button
             onClick={() => navigate('/shop')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+            className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-lg transition uppercase font-semibold"
           >
             Back to Shop
           </button>
@@ -89,6 +124,8 @@ const ProductDetails = () => {
       </div>
     );
   }
+
+  const inCart = isInCart(product.id, selectedSize, selectedColor);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -137,6 +174,13 @@ const ProductDetails = () => {
                   NEW
                 </div>
               )}
+              {!product.inStock && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="bg-white text-black px-6 py-3 rounded-lg font-bold text-lg">
+                    OUT OF STOCK
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Thumbnail Images */}
@@ -147,7 +191,7 @@ const ProductDetails = () => {
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition ${
-                      currentImageIndex === index ? 'border-blue-500' : 'border-gray-200'
+                      currentImageIndex === index ? 'border-black' : 'border-gray-200'
                     }`}
                   >
                     <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
@@ -183,14 +227,14 @@ const ProductDetails = () => {
               <div className="flex items-center gap-3">
                 {product.salePrice ? (
                   <>
-                    <span className="text-3xl font-bold text-red-600">${product.salePrice}</span>
-                    <span className="text-2xl text-gray-400 line-through">${product.price}</span>
+                    <span className="text-3xl font-bold text-red-600">${product.salePrice.toFixed(2)}</span>
+                    <span className="text-2xl text-gray-400 line-through">${product.price.toFixed(2)}</span>
                     <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-semibold">
                       Save ${(product.price - product.salePrice).toFixed(2)}
                     </span>
                   </>
                 ) : (
-                  <span className="text-3xl font-bold text-gray-900">${product.price}</span>
+                  <span className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</span>
                 )}
               </div>
             </div>
@@ -210,7 +254,7 @@ const ProductDetails = () => {
                     onClick={() => setSelectedSize(size)}
                     className={`px-6 py-3 border-2 rounded-lg font-semibold transition ${
                       selectedSize === size
-                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        ? 'border-black bg-black text-white'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -231,7 +275,7 @@ const ProductDetails = () => {
                       onClick={() => setSelectedColor(color)}
                       className={`px-6 py-3 border-2 rounded-lg font-medium transition ${
                         selectedColor === color
-                          ? 'border-blue-500 bg-blue-50 text-blue-600'
+                          ? 'border-black bg-black text-white'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -250,6 +294,7 @@ const ProductDetails = () => {
                   <button
                     onClick={() => handleQuantityChange(-1)}
                     className="px-4 py-2 hover:bg-gray-100 transition"
+                    disabled={quantity <= 1}
                   >
                     -
                   </button>
@@ -257,6 +302,7 @@ const ProductDetails = () => {
                   <button
                     onClick={() => handleQuantityChange(1)}
                     className="px-4 py-2 hover:bg-gray-100 transition"
+                    disabled={quantity >= product.stockCount}
                   >
                     +
                   </button>
@@ -268,21 +314,36 @@ const ProductDetails = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!product.inStock}
+                  className={`flex-1 font-semibold py-4 px-6 rounded-lg transition flex items-center justify-center gap-2 ${
+                    addedToCart
+                      ? 'bg-green-600 text-white'
+                      : 'bg-black hover:bg-gray-800 text-white disabled:bg-gray-300 disabled:cursor-not-allowed'
+                  }`}
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  {addedToCart ? 'Added to Cart!' : inCart ? 'Add More' : 'Add to Cart'}
+                </button>
+                <button
+                  onClick={() => setIsFavorite(!isFavorite)}
+                  className={`p-4 border-2 rounded-lg transition ${
+                    isFavorite ? 'bg-red-50 border-red-500 text-red-500' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <Heart className={`w-6 h-6 ${isFavorite ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+              
               <button
-                onClick={handleAddToCart}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition flex items-center justify-center gap-2"
+                onClick={handleBuyNow}
+                disabled={!product.inStock}
+                className="w-full bg-white border-2 border-black text-black font-semibold py-4 px-6 rounded-lg transition hover:bg-gray-50 disabled:bg-gray-100 disabled:border-gray-300 disabled:cursor-not-allowed"
               >
-                <ShoppingCart className="w-5 h-5" />
-                Add to Cart
-              </button>
-              <button
-                onClick={() => setIsFavorite(!isFavorite)}
-                className={`p-4 border-2 rounded-lg transition ${
-                  isFavorite ? 'bg-red-50 border-red-500 text-red-500' : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <Heart className={`w-6 h-6 ${isFavorite ? 'fill-current' : ''}`} />
+                Buy Now
               </button>
             </div>
 
@@ -292,7 +353,7 @@ const ProductDetails = () => {
               <ul className="space-y-2">
                 {product.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-2 text-gray-600">
-                    <span className="text-blue-500 mt-1">•</span>
+                    <span className="text-black mt-1">•</span>
                     {feature}
                   </li>
                 ))}
@@ -302,21 +363,21 @@ const ProductDetails = () => {
             {/* Shipping Info */}
             <div className="border-t pt-6 space-y-3">
               <div className="flex items-start gap-3">
-                <Truck className="w-5 h-5 text-blue-600 mt-0.5" />
+                <Truck className="w-5 h-5 text-black mt-0.5" />
                 <div>
                   <p className="font-semibold text-gray-900">Free Shipping</p>
                   <p className="text-sm text-gray-600">On orders over $100</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <RotateCcw className="w-5 h-5 text-blue-600 mt-0.5" />
+                <RotateCcw className="w-5 h-5 text-black mt-0.5" />
                 <div>
                   <p className="font-semibold text-gray-900">Easy Returns</p>
                   <p className="text-sm text-gray-600">30-day return policy</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                <Shield className="w-5 h-5 text-black mt-0.5" />
                 <div>
                   <p className="font-semibold text-gray-900">Secure Payment</p>
                   <p className="text-sm text-gray-600">100% secure transactions</p>
