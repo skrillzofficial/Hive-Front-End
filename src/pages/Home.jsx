@@ -10,33 +10,41 @@ const Home = () => {
   const featuredProducts = getFeaturedProducts();
   const saleProducts = getSaleProducts();
 
+  // Get specific products for carousel from ProductData
+  const hoodieProduct = products.find(p => p.subcategory === 'hoodies') || products[0];
+  const poloProduct = products.find(p => p.subcategory === 'polos') || products[1];
+  const capProduct = products.find(p => p.subcategory === 'caps') || products[2];
+
   const carouselSlides = [
     {
       id: 1,
-      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=1600&auto=format&fit=crop&q=80",
+      image: hoodieProduct.images[0],
       title: "HOODIES COLLECTION",
       subtitle: "Comfort meets style",
       category: "hoodies",
       buttonText: "SHOP HOODIES",
-      position: "object-cover object-center"
+      position: "object-cover object-center",
+      product: hoodieProduct
     },
     {
       id: 2,
-      image: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=1600&auto=format&fit=crop&q=80",
+      image: poloProduct.images[0],
       title: "POLO ESSENTIALS",
       subtitle: "Classic elegance for every occasion",
       category: "polos",
       buttonText: "SHOP POLOS",
-      position: "object-cover object-center"
+      position: "object-cover object-center",
+      product: poloProduct
     },
     {
       id: 3,
-      image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=1600&auto=format&fit=crop&q=80",
-      title: "SHIRTS & TOPS",
-      subtitle: "Versatile styles for any day",
-      category: "shirts",
-      buttonText: "EXPLORE SHIRTS",
-      position: "object-cover object-center"
+      image: capProduct.images[0],
+      title: "CAPS COLLECTION",
+      subtitle: "Complete your look",
+      category: "caps",
+      buttonText: "EXPLORE CAPS",
+      position: "object-cover object-center",
+      product: capProduct
     }
   ];
 
@@ -70,7 +78,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Carousel Section */}
-      <section className="relative h-[500px] lg:h-[650px] overflow-hidden bg-gray-100">
+      <section className="relative h-[500px] lg:h-[650px] overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800">
         {/* Carousel Slides */}
         <div className="relative w-full h-full">
           {carouselSlides.map((slide, index) => (
@@ -80,33 +88,74 @@ const Home = () => {
                 index === currentSlide ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              {/* Slide Image */}
-              <div className="absolute inset-0">
-                <img
-                  src={slide.image}
-                  alt={slide.title}
-                  className={`w-full h-full ${slide.position}`}
-                />
-                {/* Light overlay for text contrast */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
-              </div>
-
-              {/* Slide Content - Left Aligned */}
-              <div className="container mx-auto w-11/12 relative h-full flex flex-col justify-center items-start">
-                <div className="max-w-xl">
-                  <p className="text-white text-sm lg:text-base font-light mb-3 tracking-widest uppercase">
-                    {slide.subtitle}
-                  </p>
-                  <h1 className="text-white text-5xl lg:text-7xl font-bold tracking-tight mb-10 leading-tight">
-                    {slide.title}
-                  </h1>
+              {/* Split Layout */}
+              <div className="container mx-auto w-11/12 h-full">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full items-center">
                   
-                  <button 
-                    onClick={() => handleCarouselButtonClick(slide.category)}
-                    className="bg-white text-black px-10 py-4 font-semibold text-sm tracking-wider hover:bg-gray-100 transition-all duration-300 uppercase"
-                  >
-                    {slide.buttonText}
-                  </button>
+                  {/* Left Side - Text Content */}
+                  <div className="flex flex-col justify-center z-10 order-2 lg:order-1 px-4 lg:px-0">
+                    <p className="text-white text-sm lg:text-base font-light mb-3 tracking-widest uppercase">
+                      {slide.subtitle}
+                    </p>
+                    <h1 className="text-white text-4xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-6 leading-tight">
+                      {slide.title}
+                    </h1>
+                    <p className="text-white/80 text-base lg:text-lg mb-8 max-w-md">
+                      {slide.product.description}
+                    </p>
+                    <div className="flex items-center gap-4 mb-8">
+                      <span className="text-white text-3xl font-bold">
+                        ${slide.product.salePrice || slide.product.price}
+                      </span>
+                      {slide.product.salePrice && (
+                        <span className="text-white/60 text-xl line-through">
+                          ${slide.product.price}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => handleCarouselButtonClick(slide.category)}
+                        className="bg-white text-black px-8 py-4 font-semibold text-sm tracking-wider hover:bg-gray-100 transition-all duration-300 uppercase"
+                      >
+                        {slide.buttonText}
+                      </button>
+                      <button 
+                        onClick={() => navigate(`/product/${slide.product.slug}`)}
+                        className="bg-transparent border-2 border-white text-white px-8 py-4 font-semibold text-sm tracking-wider hover:bg-white hover:text-black transition-all duration-300 uppercase"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right Side - Product Image */}
+                  <div className="flex items-center justify-center order-1 lg:order-2 h-full py-8 lg:py-0">
+                    <div className="relative w-full max-w-md lg:max-w-lg h-full flex items-center justify-center">
+                      <div className="relative w-full aspect-square lg:aspect-auto lg:h-[500px]">
+                        <img
+                          src={slide.image}
+                          alt={slide.title}
+                          className="w-full h-full object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                        />
+                        {/* Decorative background */}
+                        <div className="absolute inset-0 bg-gradient-radial from-white/5 to-transparent -z-10 blur-3xl"></div>
+                      </div>
+                      
+                      {/* Product Badge */}
+                      {slide.product.tags.includes('new-arrival') && (
+                        <div className="absolute top-8 right-8 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold uppercase shadow-lg">
+                          New Arrival
+                        </div>
+                      )}
+                      {slide.product.salePrice && (
+                        <div className="absolute top-8 right-8 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold uppercase shadow-lg">
+                          {Math.round(((slide.product.price - slide.product.salePrice) / slide.product.price) * 100)}% OFF
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
