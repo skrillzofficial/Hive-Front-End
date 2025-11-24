@@ -1,14 +1,13 @@
-// T-Shirts
-import hivePropertyShirt from '../assets/images/HivePoloWhite-Collection.jpeg';
-import journeyShirt from '../assets/images/HivePoloWhite-Collection.jpeg';
-import hivePropertyBlackShirt from '../assets/images/HivePoloBlack-Collection.jpeg';
+// Polo
+import hivePoloShirt from '../assets/images/hivePoloBee-Collection.png';
 
 // Tanks/Vests
 import hiveAngelsVestBlack from '../assets/images/HiveAngelWhite-Collection.jpeg';
 import hiveAngelsVestWhite from '../assets/images/HiveAngelBlack-Collection.jpeg';
 
-// Polos
-import hiveFestPolo from '../assets/images/HivePoloWhite-Collection.jpeg';
+// Round Neck Shirts
+import hiveFestRoundNeckBlack from '../assets/images/HiveRoundNeckBlack-Collection.jpeg';
+import hiveFestRoundNeckWhite from '../assets/images/HiveRoundNeckWhite-Collection.jpeg';
 
 // Caps
 import hiveCapBlack from "../assets/images/HiveCap-Collection.jpeg";
@@ -92,11 +91,11 @@ export const subcategories = [
 ];
 
 export const products = [
-  // T-Shirts
+  // Round Neck Shirts
   {
     id: "ts001",
-    name: "Hive Property T-Shirt White",
-    slug: "hive-property-tshirt-white",
+    name: "Hive Round Neck Shirt White",
+    slug: "hive-roundneck-shirt-white",
     category: "men",
     subcategory: "shirts",
     price: 140000.00,
@@ -104,14 +103,14 @@ export const products = [
     currency: "NGN",
     inStock: true,
     stockCount: 50,
-    images: [hivePropertyShirt],
+    images: [hiveFestRoundNeckWhite],
     sizes: ["S", "M", "L", "XL", "XXL"],
     colors: ["White"],
     description:
-      "Classic Hive branded t-shirt with signature property logo featuring automotive heritage design.",
+      "Classic Hive round neck shirt in white with signature branding. Perfect for casual everyday wear.",
     features: [
       "100% Premium Cotton",
-      "Screen printed design",
+      "Round neck design",
       "Regular fit",
       "Machine washable",
     ],
@@ -124,37 +123,8 @@ export const products = [
   },
   {
     id: "ts002",
-    name: "Journey Of A Thousand Miles T-Shirt",
-    slug: "journey-thousand-miles-tshirt",
-    category: "men",
-    subcategory: "shirts",
-    price: 140000.00,
-    salePrice: null,
-    currency: "NGN",
-    inStock: true,
-    stockCount: 35,
-    images: [journeyShirt],
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["White"],
-    description:
-      "Inspirational t-shirt featuring vintage car graphics with the motivational quote 'Journey of a thousand miles begins with a step'.",
-    features: [
-      "100% Premium Cotton",
-      "Vintage graphic print",
-      "Soft feel fabric",
-      "Crew neck design",
-    ],
-    rating: 4.7,
-    reviews: 89,
-    tags: ["trending", "graphic", "inspirational"],
-    material: "100% Cotton",
-    care: "Machine wash cold, tumble dry low",
-    madeIn: "USA",
-  },
-  {
-    id: "ts003",
-    name: "Hive Property T-Shirt Black",
-    slug: "hive-property-tshirt-black",
+    name: "Hive Round Neck Shirt Black",
+    slug: "hive-roundneck-shirt-black",
     category: "men",
     subcategory: "shirts",
     price: 140000.00,
@@ -162,20 +132,20 @@ export const products = [
     currency: "NGN",
     inStock: true,
     stockCount: 42,
-    images: [hivePropertyBlackShirt],
+    images: [hiveFestRoundNeckBlack],
     sizes: ["S", "M", "L", "XL", "XXL"],
     colors: ["Black"],
     description:
-      "Classic Hive property t-shirt in sleek black with gold accent logo and automotive branding.",
+      "Classic Hive round neck shirt in sleek black with signature branding. A wardrobe essential.",
     features: [
       "100% Premium Cotton",
-      "Gold foil print",
+      "Round neck design",
       "Regular fit",
       "Durable construction",
     ],
     rating: 4.9,
     reviews: 156,
-    tags: ["sale", "bestseller", "signature"],
+    tags: ["bestseller", "signature"],
     material: "100% Cotton",
     care: "Machine wash cold, tumble dry low",
     madeIn: "USA",
@@ -244,8 +214,8 @@ export const products = [
   // Polos
   {
     id: "pl001",
-    name: "HiveFest Original Polo",
-    slug: "hivefest-original-polo",
+    name: "Hive Polo Bee",
+    slug: "hive-polo-bee",
     category: "men",
     subcategory: "polos",
     price: 120000.00,
@@ -253,14 +223,14 @@ export const products = [
     currency: "NGN",
     inStock: true,
     stockCount: 55,
-    images: [hiveFestPolo],
+    images: [hivePoloShirt],
     sizes: ["S", "M", "L", "XL", "XXL"],
     colors: ["White"],
     description:
-      "Classic polo shirt featuring HiveFest branding with vintage crest design and embroidered bee logo.",
+      "Classic polo shirt featuring Hive bee logo with premium embroidered design.",
     features: [
       "Cotton pique fabric",
-      "Embroidered logos",
+      "Embroidered bee logo",
       "Contrast collar",
       "Three-button placket",
     ],
@@ -515,7 +485,7 @@ export const products = [
     slug: "hive-jumpsuit-cream",
     category: "women",
     subcategory: "jumpsuits",
-    price: 150000.00,
+    price: 105000.00,
     salePrice: null,
     currency: "NGN",
     inStock: true,
@@ -544,7 +514,7 @@ export const products = [
     slug: "hive-jumpsuit-blue",
     category: "women",
     subcategory: "jumpsuits",
-    price: 150000.00,
+    price: 105000.00,
     salePrice: null,
     currency: "NGN",
     inStock: true,
@@ -573,7 +543,7 @@ export const products = [
     slug: "hive-jumpsuit-black",
     category: "women",
     subcategory: "jumpsuits",
-    price: 150000.00,
+    price: 105000.00,
     salePrice: null,
     currency: "NGN",
     inStock: true,
