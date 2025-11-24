@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import HiveLogo from '../../assets/images/Hive logo.png'
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -62,7 +63,7 @@ const Navbar = () => {
     <nav className="bg-white shadow-sm sticky top-0 z-50">
       {/* Top Bar - Announcement */}
       <div className="bg-black text-white text-center py-2 text-xs sm:text-sm">
-        <p>Free shipping on orders over $50 | Shop Now</p>
+        <p>Free shipping on orders over ₦100,000 | Shop Now</p>
       </div>
 
       {/* Main Navbar */}
@@ -70,9 +71,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <h1 className="text-2xl lg:text-3xl font-bold text-black tracking-tight hover:text-gray-700 transition-colors">
-              Hive
-            </h1>
+            <img src={HiveLogo} alt="Hive Logo" className="h-8 lg:h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}

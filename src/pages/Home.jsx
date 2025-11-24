@@ -105,11 +105,11 @@ const Home = () => {
                     </p>
                     <div className="flex items-center gap-4 mb-8">
                       <span className="text-white text-3xl font-bold">
-                        ${slide.product.salePrice || slide.product.price}
+                        ₦{(slide.product.salePrice || slide.product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       {slide.product.salePrice && (
                         <span className="text-white/60 text-xl line-through">
-                          ${slide.product.price}
+                          ₦{slide.product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       )}
                     </div>
@@ -195,11 +195,11 @@ const Home = () => {
                     </p>
                     <div className="flex items-center justify-center gap-3 mb-6">
                       <span className="text-white text-2xl sm:text-3xl font-bold">
-                        ${slide.product.salePrice || slide.product.price}
+                        ₦{(slide.product.salePrice || slide.product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       {slide.product.salePrice && (
                         <span className="text-white/60 text-lg sm:text-xl line-through">
-                          ${slide.product.price}
+                          ₦{slide.product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       )}
                     </div>
@@ -313,15 +313,15 @@ const Home = () => {
                       {product.salePrice ? (
                         <>
                           <p className="text-lg font-bold text-red-600">
-                            ${product.salePrice.toFixed(2)}
+                            ₦{product.salePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                           <p className="text-sm text-gray-500 line-through">
-                            ${product.price.toFixed(2)}
+                            ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         </>
                       ) : (
                         <p className="text-lg font-bold text-gray-900">
-                          ${product.price.toFixed(2)}
+                          ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       )}
                     </div>
@@ -382,15 +382,15 @@ const Home = () => {
                   {product.salePrice ? (
                     <>
                       <p className="text-base font-bold text-gray-900">
-                        ${product.salePrice.toFixed(2)}
+                        ₦{product.salePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       <p className="text-xs text-gray-500 line-through">
-                        ${product.price.toFixed(2)}
+                        ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </>
                   ) : (
                     <p className="text-base font-bold text-gray-900">
-                      ${product.price.toFixed(2)}
+                      ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   )}
                 </div>

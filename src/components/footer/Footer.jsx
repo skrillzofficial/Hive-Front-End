@@ -1,5 +1,6 @@
 import React from 'react';
 import { Instagram, Facebook, Twitter, Mail } from 'lucide-react';
+import HiveLogo from '../../assets/images/Hive logo.png'
 
 const Footer = () => {
   return (
@@ -10,7 +11,7 @@ const Footer = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
             {/* Brand Section */}
             <div className="space-y-4">
-              <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">Hive</h2>
+              <img src={HiveLogo} alt="Hive Logo" className="h-8 w-auto" />
               <p className="text-gray-400 text-sm leading-relaxed">
                 Crafting timeless fashion for the modern wardrobe. Quality meets style.
               </p>

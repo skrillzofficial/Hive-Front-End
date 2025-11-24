@@ -227,14 +227,20 @@ const ProductDetails = () => {
               <div className="flex items-center gap-3">
                 {product.salePrice ? (
                   <>
-                    <span className="text-3xl font-bold text-red-600">${product.salePrice.toFixed(2)}</span>
-                    <span className="text-2xl text-gray-400 line-through">${product.price.toFixed(2)}</span>
+                    <span className="text-3xl font-bold text-red-600">
+                      ₦{product.salePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-2xl text-gray-400 line-through">
+                      ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                     <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-semibold">
-                      Save ${(product.price - product.salePrice).toFixed(2)}
+                      Save ₦{(product.price - product.salePrice).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </>
                 ) : (
-                  <span className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</span>
+                  <span className="text-3xl font-bold text-gray-900">
+                    ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 )}
               </div>
             </div>
@@ -366,7 +372,7 @@ const ProductDetails = () => {
                 <Truck className="w-5 h-5 text-black mt-0.5" />
                 <div>
                   <p className="font-semibold text-gray-900">Free Shipping</p>
-                  <p className="text-sm text-gray-600">On orders over $100</p>
+                  <p className="text-sm text-gray-600">On orders over ₦100,000</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">

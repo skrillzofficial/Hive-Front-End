@@ -18,7 +18,7 @@ const Shop = () => {
   const [sortBy, setSortBy] = useState('featured');
   const [selectedCategory, setSelectedCategory] = useState(category || 'all');
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategory || 'all');
-  const [priceRange, setPriceRange] = useState([0, 200]);
+  const [priceRange, setPriceRange] = useState([0, 200000]);
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [showSaleOnly, setShowSaleOnly] = useState(false);
 
@@ -127,7 +127,7 @@ const Shop = () => {
   const clearFilters = () => {
     setSelectedCategory('all');
     setSelectedSubcategory('all');
-    setPriceRange([0, 200]);
+    setPriceRange([0, 200000]);
     setSelectedSizes([]);
     setShowSaleOnly(false);
     navigate('/shop');
@@ -250,14 +250,15 @@ const Shop = () => {
                   <input
                     type="range"
                     min="0"
-                    max="200"
+                    max="200000"
+                    step="10000"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm text-gray-600">
-                    <span>${priceRange[0]}</span>
-                    <span>${priceRange[1]}</span>
+                    <span>₦{priceRange[0].toLocaleString()}</span>
+                    <span>₦{priceRange[1].toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -400,15 +401,15 @@ const Shop = () => {
                         {product.salePrice ? (
                           <>
                             <span className="text-lg font-bold text-red-600">
-                              ${product.salePrice.toFixed(2)}
+                              ₦{product.salePrice.toLocaleString()}
                             </span>
                             <span className="text-sm text-gray-500 line-through">
-                              ${product.price.toFixed(2)}
+                              ₦{product.price.toLocaleString()}
                             </span>
                           </>
                         ) : (
                           <span className="text-lg font-bold text-gray-900">
-                            ${product.price.toFixed(2)}
+                            ₦{product.price.toLocaleString()}
                           </span>
                         )}
                       </div>
