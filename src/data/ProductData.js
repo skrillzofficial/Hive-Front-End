@@ -22,10 +22,10 @@ import hiveHoodieCream from "../assets/images/HiveHoodie2-Collection.jpeg";
 import hiveHoodieBurgundy from "../assets/images/HiveHoodie-Collection.jpeg";
 import hiveHoodieBlack from "../assets/images/HiveHoodie2-Collection.jpeg";
 
-// Female GymWear
-import hiveFemaleGymWearCream from "../assets/images/HiveFemaleCream-Collection.png";
-import hiveFemaleGymWearBlue from "../assets/images/HiveFemaleBlue-Collection.png";
-import hiveFemaleGymWearBlack from "../assets/images/HiveFemaleBlack-Collection.png"
+// Female Jumpsuits
+import hiveFemaleJumpsuitCream from "../assets/images/HiveFemaleCream-Collection.png";
+import hiveFemaleJumpsuitBlue from "../assets/images/HiveFemaleBlue-Collection.png";
+import hiveFemaleJumpsuitBlack from "../assets/images/HiveFemaleBlack-Collection.png"
 
 export const categories = [
   {
@@ -34,7 +34,7 @@ export const categories = [
     slug: "women",
     description: "Explore our curated collection of women's fashion",
     image: "https://images.unsplash.com/photo-1483985988355-763728e1935b",
-    subcategories: ["shirts", "polos", "hoodies", "caps", "tanks", "activewear"],
+    subcategories: ["shirts", "polos", "hoodies", "caps", "tanks", "jumpsuits"],
   },
   {
     id: "men",
@@ -83,10 +83,10 @@ export const subcategories = [
     category: ["women", "men"],
   },
   {
-    id: "activewear",
-    name: "Activewear",
-    slug: "activewear",
-    description: "Performance activewear and gym essentials",
+    id: "jumpsuits",
+    name: "Jumpsuits",
+    slug: "jumpsuits",
+    description: "Stylish jumpsuits for women",
     category: ["women"],
   },
 ];
@@ -508,91 +508,91 @@ export const products = [
     madeIn: "USA",
   },
 
-  // Female Activewear / Gym Wear
+  // Female Jumpsuits
   {
-    id: "gw001",
-    name: "Hive Active Set Cream",
-    slug: "hive-active-set-cream",
+    id: "js001",
+    name: "Hive Jumpsuit Cream",
+    slug: "hive-jumpsuit-cream",
     category: "women",
-    subcategory: "activewear",
+    subcategory: "jumpsuits",
     price: 150000.00,
     salePrice: null,
     currency: "NGN",
     inStock: true,
     stockCount: 35,
-    images: [hiveFemaleGymWearCream],
+    images: [hiveFemaleJumpsuitCream],
     sizes: ["XS", "S", "M", "L", "XL"],
     colors: ["Cream"],
     description:
-      "Premium activewear set in cream featuring sports bra and high-waisted leggings. Perfect for workouts or athleisure wear.",
+      "Elegant cream jumpsuit featuring a sleek silhouette. Perfect for casual outings or dressed-up occasions.",
     features: [
-      "Moisture-wicking fabric",
-      "Four-way stretch",
-      "High-waisted design",
-      "Breathable material",
+      "Premium cotton blend",
+      "Comfortable fit",
+      "Adjustable waist",
+      "Breathable fabric",
     ],
     rating: 4.8,
     reviews: 92,
-    tags: ["bestseller", "activewear", "new-arrival"],
-    material: "88% Polyester, 12% Spandex",
+    tags: ["bestseller", "jumpsuits", "new-arrival"],
+    material: "95% Cotton, 5% Elastane",
     care: "Machine wash cold, hang dry",
     madeIn: "Vietnam",
   },
   {
-    id: "gw002",
-    name: "Hive Active Set Blue",
-    slug: "hive-active-set-blue",
+    id: "js002",
+    name: "Hive Jumpsuit Blue",
+    slug: "hive-jumpsuit-blue",
     category: "women",
-    subcategory: "activewear",
+    subcategory: "jumpsuits",
     price: 150000.00,
     salePrice: null,
     currency: "NGN",
     inStock: true,
     stockCount: 28,
-    images: [hiveFemaleGymWearBlue],
+    images: [hiveFemaleJumpsuitBlue],
     sizes: ["XS", "S", "M", "L", "XL"],
     colors: ["Blue"],
     description:
-      "Stylish blue activewear set designed for performance and comfort. Includes sports bra and matching leggings.",
+      "Stylish blue jumpsuit designed for comfort and versatility. A wardrobe essential for the modern woman.",
     features: [
-      "Moisture-wicking fabric",
-      "Four-way stretch",
-      "High-waisted design",
-      "Breathable material",
+      "Premium cotton blend",
+      "Comfortable fit",
+      "Adjustable waist",
+      "Breathable fabric",
     ],
     rating: 4.9,
     reviews: 108,
-    tags: ["bestseller", "activewear", "trending"],
-    material: "88% Polyester, 12% Spandex",
+    tags: ["bestseller", "jumpsuits", "trending"],
+    material: "95% Cotton, 5% Elastane",
     care: "Machine wash cold, hang dry",
     madeIn: "Vietnam",
   },
   {
-    id: "gw003",
-    name: "Hive Active Set Black",
-    slug: "hive-active-set-black",
+    id: "js003",
+    name: "Hive Jumpsuit Black",
+    slug: "hive-jumpsuit-black",
     category: "women",
-    subcategory: "activewear",
+    subcategory: "jumpsuits",
     price: 150000.00,
     salePrice: null,
     currency: "NGN",
     inStock: true,
     stockCount: 42,
-    images: [hiveFemaleGymWearBlack],
+    images: [hiveFemaleJumpsuitBlack],
     sizes: ["XS", "S", "M", "L", "XL"],
     colors: ["Black"],
     description:
-      "Classic black activewear set perfect for any workout. Features supportive sports bra and high-performance leggings.",
+      "Classic black jumpsuit that effortlessly combines style and comfort. A timeless piece for any wardrobe.",
     features: [
-      "Moisture-wicking fabric",
-      "Four-way stretch",
-      "High-waisted design",
-      "Breathable material",
+      "Premium cotton blend",
+      "Comfortable fit",
+      "Adjustable waist",
+      "Breathable fabric",
     ],
     rating: 4.9,
     reviews: 156,
-    tags: ["bestseller", "activewear", "classic"],
-    material: "88% Polyester, 12% Spandex",
+    tags: ["bestseller", "jumpsuits", "classic"],
+    material: "95% Cotton, 5% Elastane",
     care: "Machine wash cold, hang dry",
     madeIn: "Vietnam",
   },
