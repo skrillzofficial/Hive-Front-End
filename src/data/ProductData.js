@@ -24,8 +24,8 @@ import hiveHoodieBlack from "../assets/images/HiveHoodie2-Collection.jpeg";
 
 // Female Jumpsuits
 import hiveFemaleJumpsuitCream from "../assets/images/HiveFemaleCream-Collection.png";
-import hiveFemaleJumpsuitBlue from "../assets/images/HiveFemaleBlue-Collection.png";
-import hiveFemaleJumpsuitBlack from "../assets/images/HiveFemaleBlack-Collection.png"
+import hiveFemaleJumpsuitBlue from "../assets/images/HiveFemaleBlue-collection.png";
+import hiveFemaleJumpsuitBlack from "../assets/images/HiveFemaleBlack-collection.png"
 
 export const categories = [
   {
