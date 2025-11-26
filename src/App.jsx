@@ -15,6 +15,11 @@ import ProductDetails from "./pages/ProductDetails";
 import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
+import CustomerService from "./components/footer/CustomerService";
+import SizeGuide from "./components/footer/SizeGuide";
+import ReturnAndExchange from "./components/footer/ReturnAndExchanges"
+
+
 
 // Layout Component
 const Layout = ({ children }) => {
@@ -51,6 +56,15 @@ const AppRoutes = () => {
 
             {/* Product Details Route */}
             <Route path="/product/:slug" element={<ProductDetails />} />
+
+            {/* Size Guide page */}
+            <Route path="/sizeguide" element={<SizeGuide/>} />
+
+             {/* CustomerService page */}
+            <Route path="/support" element={<CustomerService/>} />
+
+            {/* ReturnAndExchange page */}
+            <Route path="/returnandexchange" element={<ReturnAndExchange/>} />
 
             {/* 404 Not Found Route */}
             <Route path="*" element={<NotFound />} />

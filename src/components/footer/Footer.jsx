@@ -46,23 +46,18 @@ const Footer = () => {
               <h3 className="text-sm font-bold uppercase tracking-wider">Shop</h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-gray-400 text-sm hover:text-white transition-colors">
+                  <a href="/shop/women" className="text-gray-400 text-sm hover:text-white transition-colors">
                     Women's Collection
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 text-sm hover:text-white transition-colors">
+                  <a href="/shop/men" className="text-gray-400 text-sm hover:text-white transition-colors">
                     Men's Collection
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 text-sm hover:text-white transition-colors">
+                  <a href="/shop?filter=new-arrival" className="text-gray-400 text-sm hover:text-white transition-colors">
                     New Arrivals
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-gray-400 text-sm hover:text-white transition-colors">
-                    Sale
                   </a>
                 </li>
               </ul>
@@ -73,22 +68,17 @@ const Footer = () => {
               <h3 className="text-sm font-bold uppercase tracking-wider">Help</h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-gray-400 text-sm hover:text-white transition-colors">
+                  <a href="/support" className="text-gray-400 text-sm hover:text-white transition-colors">
                     Customer Service
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 text-sm hover:text-white transition-colors">
-                    Shipping Info
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-gray-400 text-sm hover:text-white transition-colors">
+                  <a href="/returnandexchange" className="text-gray-400 text-sm hover:text-white transition-colors">
                     Returns & Exchanges
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 text-sm hover:text-white transition-colors">
+                  <a href="sizeguide" className="text-gray-400 text-sm hover:text-white transition-colors">
                     Size Guide
                   </a>
                 </li>
