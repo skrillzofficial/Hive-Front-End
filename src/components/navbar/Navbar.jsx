@@ -1,19 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, LogOut, Package, Heart, Settings } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-import HiveLogo from '../../assets/images/Hive logo.png'
+import { useUser } from '../../context/UserContext';
+import HiveLogo from '../../assets/images/Hive logo.png';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const searchRef = useRef(null);
+  const dropdownRef = useRef(null);
   
   // Get cart count from context
   const { getCartCount } = useCart();
   const cartCount = getCartCount();
+
+  // Get user data from UserContext
+  const { user, isAuthenticated, logout: contextLogout } = useUser();
+
+  // Debug: Log user state changes
+  useEffect(() => {
+    console.log('User state changed:', { user, isAuthenticated });
+  }, [user, isAuthenticated]);
 
   // Close search when clicking outside
   useEffect(() => {
@@ -33,6 +44,23 @@ const Navbar = () => {
     };
   }, [searchOpen]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    if (userDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userDropdownOpen]);
+
   // Close mobile menu when navigating
   const handleMobileNavClick = () => {
     setMobileMenuOpen(false);
@@ -46,6 +74,29 @@ const Navbar = () => {
       setSearchQuery('');
       setSearchOpen(false);
     }
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    contextLogout();
+    setUserDropdownOpen(false);
+    navigate('/');
+  };
+
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin';
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!user) return 'User';
+    
+    // Try different possible name fields
+    if (user.name) return user.name;
+    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+    if (user.firstName) return user.firstName;
+    if (user.email) return user.email.split('@')[0];
+    
+    return 'User';
   };
 
   // NavLink active class helper
@@ -101,14 +152,126 @@ const Navbar = () => {
               <Search size={22} strokeWidth={1.5} />
             </button>
 
-            {/* User Icon */}
-            <button
-              onClick={() => navigate('/profile')}
-              className="text-gray-700 hover:text-black transition-colors"
-              aria-label="Profile"
-            >
-              <User size={22} strokeWidth={1.5} />
-            </button>
+            {/* User Icon with Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className={`transition-colors ${
+                  isAuthenticated 
+                    ? 'text-black hover:text-gray-700' 
+                    : 'text-gray-700 hover:text-black'
+                }`}
+                aria-label="User Menu"
+              >
+                <User size={22} strokeWidth={isAuthenticated ? 2 : 1.5} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  {isAuthenticated ? (
+                    // Authenticated User Menu
+                    <>
+                      <div className="px-4 py-3 border-b border-gray-200">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {getUserDisplayName()}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">
+                          {user?.email}
+                        </p>
+                        {isAdmin && (
+                          <span className="inline-block mt-2 px-2 py-0.5 text-xs font-semibold text-white bg-black rounded">
+                            Admin
+                          </span>
+                        )}
+                        {!isAdmin && (
+                          <span className="inline-block mt-2 px-2 py-0.5 text-xs font-semibold text-gray-700 bg-gray-100 rounded">
+                            Customer
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Admin Dashboard Link (only for admins) */}
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          <Settings size={16} className="mr-3" />
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      
+                      <Link
+                        to="/profile"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <User size={16} className="mr-3" />
+                        My Profile
+                      </Link>
+                      
+                      <Link
+                        to="/profile/orders"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <Package size={16} className="mr-3" />
+                        My Orders
+                      </Link>
+                      
+                      <Link
+                        to="/profile/wishlist"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <Heart size={16} className="mr-3" />
+                        Wishlist
+                      </Link>
+                      
+                      <div className="border-t border-gray-200 mt-2 pt-2">
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut size={16} className="mr-3" />
+                          Logout
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    // Unauthenticated User Menu
+                    <>
+                      <div className="px-4 py-3 border-b border-gray-200">
+                        <p className="text-sm font-semibold text-gray-900">
+                          Welcome to Hive
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Sign in to access your account
+                        </p>
+                      </div>
+                      
+                      <Link
+                        to="/login"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        Login
+                      </Link>
+                      
+                      <Link
+                        to="/register"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        Create Account
+                      </Link>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Cart Icon with Badge */}
             <button

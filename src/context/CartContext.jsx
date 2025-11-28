@@ -6,7 +6,6 @@ const CartContext = createContext();
 
 // Cart Provider Component
 export const CartProvider = ({ children }) => {
-  // Initialize cart from localStorage or empty array
   // We only store: productId, quantity, selectedSize, selectedColor
   const [cartItems, setCartItems] = useState(() => {
     try {
