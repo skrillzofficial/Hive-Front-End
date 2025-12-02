@@ -1,4 +1,13 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1' || "https://hive-back-end.onrender.com/api/v1";
+// Determine which environment we're in
+const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+
+const API_URL = import.meta.env.VITE_API_URL || 
+  (isDevelopment 
+    ? 'http://localhost:5000/api/v1' 
+    : 'https://hive-back-end.onrender.com/api/v1');
+
+console.log('Environment:', import.meta.env.MODE);
+console.log('API_URL:', API_URL);
 
 // Helper to get auth token
 const getAuthToken = () => {
