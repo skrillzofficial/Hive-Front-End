@@ -11,14 +11,27 @@ export const UserProvider = ({ children }) => {
 
   // Check if user is logged in on mount
   useEffect(() => {
-    checkAuth();
+    // Only check auth if we have a token
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    
+    if (token) {
+      console.log('Token found, checking auth...');
+      checkAuth();
+    } else {
+      console.log('No token found, skipping auth check');
+      setLoading(false); // IMPORTANT: Set loading to false if no token
+    }
   }, []);
 
   // Sync user state with localStorage
   useEffect(() => {
     if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("authToken", localStorage.getItem("token") || "");
+      try {
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("authToken", localStorage.getItem("token") || "");
+      } catch (err) {
+        console.error('localStorage error:', err);
+      }
     }
   }, [user]);
 
@@ -26,6 +39,15 @@ export const UserProvider = ({ children }) => {
   const checkAuth = async () => {
     setLoading(true);
     try {
+      // Double check token exists before making API call
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        console.log('No token in checkAuth, aborting');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Calling getMe API...');
       const data = await userAPI.getMe();
       const userData = data.user || data;
       setUser(userData);
@@ -33,7 +55,9 @@ export const UserProvider = ({ children }) => {
 
       // Update localStorage for navbar
       localStorage.setItem("user", JSON.stringify(userData));
+      console.log('Auth check successful');
     } catch (err) {
+      console.log('Auth check failed (this is normal if not logged in):', err.message);
       setUser(null);
       setIsAuthenticated(false);
       // Clear localStorage on auth failure
@@ -83,7 +107,10 @@ export const UserProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      console.log('🔐 Login called with credentials');
       const data = await userAPI.login(credentials);
+      console.log('✅ Login API response:', data);
+      
       const userData = data.user || data;
 
       setUser(userData);
@@ -93,13 +120,14 @@ export const UserProvider = ({ children }) => {
       if (data.token) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("authToken", data.token);
+        console.log('Token stored');
       }
       localStorage.setItem("user", JSON.stringify(userData));
 
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Login error:", err);
+      console.error("❌ Login error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -150,6 +178,7 @@ export const UserProvider = ({ children }) => {
       setLoading(false);
     }
   };
+
   // Resend OTP
   const resendOTP = async (phoneData) => {
     setLoading(true);
