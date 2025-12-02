@@ -1,7 +1,14 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1' || 'https://hive-back-end.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+// Helper to get auth token
+const getAuthToken = () => {
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
+};
 
 // Generic API call function
 const apiCall = async (endpoint, options = {}) => {
+  const token = getAuthToken();
+  
   const config = {
     credentials: 'include',
     headers: {
@@ -10,6 +17,16 @@ const apiCall = async (endpoint, options = {}) => {
     },
     ...options,
   };
+
+  // Add Authorization header if token exists
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Remove Content-Type if body is FormData
+  if (options.body instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
 
   const response = await fetch(`${API_URL}${endpoint}`, config);
   
@@ -23,11 +40,11 @@ const apiCall = async (endpoint, options = {}) => {
 
 // ========== PRODUCT API ==========
 export const productAPI = {
-  getAll: () => apiCall('/products'),
+  getAll: () => apiCall('/products/all'),
   
   getById: (id) => apiCall(`/products/${id}`),
   
-  create: (productData) => apiCall('/products', {
+  create: (productData) => apiCall('/products/create', {
     method: 'POST',
     body: JSON.stringify(productData),
   }),
@@ -47,7 +64,7 @@ export const productAPI = {
     
     return apiCall('/products/upload', {
       method: 'POST',
-      headers: {}, // Let browser set Content-Type for FormData
+      headers: {},
       body: formData,
     });
   },
@@ -55,7 +72,6 @@ export const productAPI = {
 
 // ========== USER API ==========
 export const userAPI = {
-  // Public routes
   register: (userData) => apiCall('/register', {
     method: 'POST',
     body: JSON.stringify(userData),
@@ -76,7 +92,6 @@ export const userAPI = {
     body: JSON.stringify(phoneData),
   }),
 
-  // Password reset routes
   forgotPassword: (emailData) => apiCall('/forgot-password', {
     method: 'POST',
     body: JSON.stringify(emailData),
@@ -92,7 +107,6 @@ export const userAPI = {
     body: JSON.stringify(passwordData),
   }),
 
-  // Private routes (authenticated users)
   getMe: () => apiCall('/me'),
   
   updateProfile: (userData) => apiCall('/profile', {
@@ -105,7 +119,6 @@ export const userAPI = {
     body: JSON.stringify(passwordData),
   }),
 
-  // Admin routes
   getAllUsers: () => apiCall('/'),
   
   createAdmin: (adminData) => apiCall('/admin', {
@@ -116,7 +129,7 @@ export const userAPI = {
   getUser: (id) => apiCall(`/${id}`),
   
   updateUser: (id, userData) => apiCall(`/${id}`, {
-    method: 'Patch',
+    method: 'PATCH',
     body: JSON.stringify(userData),
   }),
   
