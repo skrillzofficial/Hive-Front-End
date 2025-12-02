@@ -13,13 +13,10 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('📦 Fetching all products...');
       const data = await productAPI.getAll();
-      console.log('✅ Products fetched:', data);
       setProducts(data.products || []);
     } catch (err) {
       setError(err.message);
-      console.error('❌ Error fetching products:', err);
     } finally {
       setLoading(false);
     }
@@ -30,13 +27,10 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('📦 Fetching product:', id);
       const data = await productAPI.getById(id);
-      console.log('✅ Product fetched:', data);
       return data.product;
     } catch (err) {
       setError(err.message);
-      console.error('❌ Error fetching product:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -48,16 +42,13 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('📦 Creating product:', productData);
       const data = await productAPI.create(productData);
-      console.log('✅ Product created:', data);
       
       // Update local state
       setProducts([...products, data.product]);
       return data;
     } catch (err) {
       setError(err.message);
-      console.error('❌ Error creating product:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -69,16 +60,13 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('📦 Updating product:', id, productData);
       const data = await productAPI.update(id, productData);
-      console.log('✅ Product updated:', data);
       
       // Update local state
       setProducts(products.map(p => p._id === id ? data.product : p));
       return data;
     } catch (err) {
       setError(err.message);
-      console.error('❌ Error updating product:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -90,16 +78,13 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('📦 Deleting product:', id);
       await productAPI.delete(id);
-      console.log('✅ Product deleted');
       
       // Update local state
       setProducts(products.filter(p => p._id !== id));
       return true;
     } catch (err) {
       setError(err.message);
-      console.error('❌ Error deleting product:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -109,16 +94,44 @@ export const ProductProvider = ({ children }) => {
   // Upload image (Admin only - requires authentication)
   const uploadImage = async (file) => {
     try {
-      console.log('🖼️ Starting image upload for file:', file.name);
-      console.log('🖼️ File size:', (file.size / 1024).toFixed(2), 'KB');
-      console.log('🖼️ File type:', file.type);
+      // Get auth token
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found. Please login as admin.');
+      }
+
+      // Determine API URL (same logic as api.js)
+      const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+      const API_URL = import.meta.env.VITE_API_URL || 
+        (isDevelopment 
+          ? 'http://localhost:5000/api/v1' 
+          : 'https://hive-back-end.onrender.com/api/v1');
+
+      const formData = new FormData();
+      formData.append('images', file);
       
-      const data = await productAPI.uploadImage(file);
-      console.log('✅ Image uploaded successfully:', data);
+      const response = await fetch(`${API_URL}/products/upload-images`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
       
-      return { url: data.imageUrl || data.url };
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `Upload failed with status ${response.status}`);
+      }
+
+      if (!data.images || !Array.isArray(data.images) || data.images.length === 0) {
+        throw new Error('Invalid response format from server');
+      }
+
+      // Return just the URL string, not an object
+      return data.images[0];
+      
     } catch (err) {
-      console.error('❌ Upload error:', err.message);
       throw err;
     }
   };

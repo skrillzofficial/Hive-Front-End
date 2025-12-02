@@ -27,7 +27,7 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
     tags: [""],
   });
 
-  const [pendingImageFiles, setPendingImageFiles] = useState([]); // Store files to upload later
+  const [pendingImageFiles, setPendingImageFiles] = useState([]); 
   const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
@@ -139,14 +139,12 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
       let uploadedImageUrls = [];
       
       if (pendingImageFiles.length > 0) {
-        console.log('Uploading', pendingImageFiles.length, 'images...');
         const uploadPromises = pendingImageFiles.map((file) => uploadImage(file));
         const uploadResults = await Promise.all(uploadPromises);
-        uploadedImageUrls = uploadResults.map((result) => result.url);
-        console.log('Images uploaded successfully:', uploadedImageUrls);
+        uploadedImageUrls = uploadResults;
       }
 
-      // Filter out blob URLs (previews) and keep only real URLs (if editing)
+      // Filter out blob URLs  and keep only real URLs (if editing)
       const existingImageUrls = productFormData.images.filter(
         (img) => !img.startsWith('blob:')
       );
@@ -166,7 +164,6 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
         tags: productFormData.tags.filter((t) => t),
       };
 
-      console.log('Submitting product with data:', productData);
       await onSubmit(productData);
 
       // Clear pending files after successful submission

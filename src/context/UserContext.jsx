@@ -15,11 +15,9 @@ export const UserProvider = ({ children }) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     
     if (token) {
-      console.log('Token found, checking auth...');
       checkAuth();
     } else {
-      console.log('No token found, skipping auth check');
-      setLoading(false); // IMPORTANT: Set loading to false if no token
+      setLoading(false);
     }
   }, []);
 
@@ -30,7 +28,7 @@ export const UserProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("authToken", localStorage.getItem("token") || "");
       } catch (err) {
-        console.error('localStorage error:', err);
+        // Silent fail for localStorage errors
       }
     }
   }, [user]);
@@ -42,12 +40,10 @@ export const UserProvider = ({ children }) => {
       // Double check token exists before making API call
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (!token) {
-        console.log('No token in checkAuth, aborting');
         setLoading(false);
         return;
       }
 
-      console.log('Calling getMe API...');
       const data = await userAPI.getMe();
       const userData = data.user || data;
       setUser(userData);
@@ -55,9 +51,7 @@ export const UserProvider = ({ children }) => {
 
       // Update localStorage for navbar
       localStorage.setItem("user", JSON.stringify(userData));
-      console.log('Auth check successful');
     } catch (err) {
-      console.log('Auth check failed (this is normal if not logged in):', err.message);
       setUser(null);
       setIsAuthenticated(false);
       // Clear localStorage on auth failure
@@ -95,7 +89,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Registration error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -107,10 +100,7 @@ export const UserProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('🔐 Login called with credentials');
       const data = await userAPI.login(credentials);
-      console.log('✅ Login API response:', data);
-      
       const userData = data.user || data;
 
       setUser(userData);
@@ -120,14 +110,12 @@ export const UserProvider = ({ children }) => {
       if (data.token) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("authToken", data.token);
-        console.log('Token stored');
       }
       localStorage.setItem("user", JSON.stringify(userData));
 
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("❌ Login error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -172,7 +160,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("OTP verification error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -188,7 +175,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Resend OTP error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -204,7 +190,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Forgot password error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -220,7 +205,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Verify reset OTP error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -236,7 +220,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Reset password error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -255,7 +238,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Update profile error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -271,7 +253,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Update password error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -287,7 +268,6 @@ export const UserProvider = ({ children }) => {
       return data.users || data;
     } catch (err) {
       setError(err.message);
-      console.error("Get all users error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -303,7 +283,6 @@ export const UserProvider = ({ children }) => {
       return data.user || data;
     } catch (err) {
       setError(err.message);
-      console.error("Get user error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -319,7 +298,6 @@ export const UserProvider = ({ children }) => {
       return data;
     } catch (err) {
       setError(err.message);
-      console.error("Update user error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -335,7 +313,6 @@ export const UserProvider = ({ children }) => {
       return true;
     } catch (err) {
       setError(err.message);
-      console.error("Delete user error:", err);
       throw err;
     } finally {
       setLoading(false);
