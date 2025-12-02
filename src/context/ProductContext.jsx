@@ -1,52 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
+import { productAPI } from '../api/api';
 
 const ProductContext = createContext();
-
-// API Base URL - adjust this to match your backend
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
-// Helper function to get auth token
-const getAuthToken = () => {
-  return localStorage.getItem('token') || sessionStorage.getItem('token');
-};
-
-// Helper function to make API calls
-const apiCall = async (endpoint, options = {}) => {
-  const token = getAuthToken();
-  
-  const headers = {
-    ...options.headers,
-  };
-
-  // Add auth token if available (for admin routes)
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  // Only add Content-Type for non-FormData requests
-  if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-      credentials: 'include', // Include cookies if using cookie-based auth
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP Error: ${response.status}`);
-    }
-
-    return data;
-  } catch (error) {
-    console.error('API Call Error:', error);
-    throw error;
-  }
-};
 
 export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
@@ -58,11 +13,13 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiCall('/products/all');
+      console.log('📦 Fetching all products...');
+      const data = await productAPI.getAll();
+      console.log('✅ Products fetched:', data);
       setProducts(data.products || []);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching products:', err);
+      console.error('❌ Error fetching products:', err);
     } finally {
       setLoading(false);
     }
@@ -73,11 +30,13 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/products/${id}`);
+      console.log('📦 Fetching product:', id);
+      const data = await productAPI.getById(id);
+      console.log('✅ Product fetched:', data);
       return data.product;
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching product:', err);
+      console.error('❌ Error fetching product:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -89,17 +48,16 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiCall('/products/create', {
-        method: 'POST',
-        body: JSON.stringify(productData),
-      });
+      console.log('📦 Creating product:', productData);
+      const data = await productAPI.create(productData);
+      console.log('✅ Product created:', data);
       
       // Update local state
       setProducts([...products, data.product]);
       return data;
     } catch (err) {
       setError(err.message);
-      console.error('Error creating product:', err);
+      console.error('❌ Error creating product:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -111,17 +69,16 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/products/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(productData),
-      });
+      console.log('📦 Updating product:', id, productData);
+      const data = await productAPI.update(id, productData);
+      console.log('✅ Product updated:', data);
       
       // Update local state
       setProducts(products.map(p => p._id === id ? data.product : p));
       return data;
     } catch (err) {
       setError(err.message);
-      console.error('Error updating product:', err);
+      console.error('❌ Error updating product:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -133,16 +90,16 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      await apiCall(`/products/${id}`, {
-        method: 'DELETE',
-      });
+      console.log('📦 Deleting product:', id);
+      await productAPI.delete(id);
+      console.log('✅ Product deleted');
       
       // Update local state
       setProducts(products.filter(p => p._id !== id));
       return true;
     } catch (err) {
       setError(err.message);
-      console.error('Error deleting product:', err);
+      console.error('❌ Error deleting product:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -152,49 +109,16 @@ export const ProductProvider = ({ children }) => {
   // Upload image (Admin only - requires authentication)
   const uploadImage = async (file) => {
     try {
-      console.log('🔵 Starting image upload for file:', file.name);
-      console.log('🔵 File size:', (file.size / 1024).toFixed(2), 'KB');
-      console.log('🔵 File type:', file.type);
+      console.log('🖼️ Starting image upload for file:', file.name);
+      console.log('🖼️ File size:', (file.size / 1024).toFixed(2), 'KB');
+      console.log('🖼️ File type:', file.type);
       
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('No authentication token found. Please login as admin.');
-      }
-      console.log('🔵 Auth token exists');
-
-      const formData = new FormData();
-      formData.append('images', file);
-
-      console.log('🔵 Uploading to:', `${API_URL}/products/upload-images`);
+      const data = await productAPI.uploadImage(file);
+      console.log('✅ Image uploaded successfully:', data);
       
-      const response = await fetch(`${API_URL}/products/upload-images`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-        credentials: 'include',
-      });
-
-      console.log('🔵 Response status:', response.status);
-      
-      const data = await response.json();
-      console.log('🔵 Response data:', data);
-
-      if (!response.ok) {
-        throw new Error(data.message || `Upload failed with status ${response.status}`);
-      }
-
-      if (!data.images || !Array.isArray(data.images) || data.images.length === 0) {
-        console.error(' Unexpected response format:', data);
-        throw new Error('Invalid response format from server');
-      }
-
-      console.log(' Image uploaded successfully:', data.images[0]);
-      return { url: data.images[0] };
-      
+      return { url: data.imageUrl || data.url };
     } catch (err) {
-      console.error(' Upload error:', err.message);
+      console.error('❌ Upload error:', err.message);
       throw err;
     }
   };
