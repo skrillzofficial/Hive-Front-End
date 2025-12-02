@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import HiveLogo from '../assets/images/Hive logo.png';
@@ -14,6 +14,23 @@ const Login = () => {
     password: '',
   });
   const [errors, setErrors] = useState({});
+
+  // Add Eruda console for mobile debugging (remove after debugging)
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+    document.body.appendChild(script);
+    script.onload = () => {
+      window.eruda.init();
+    };
+    
+    return () => {
+      // Cleanup
+      if (window.eruda) {
+        window.eruda.destroy();
+      }
+    };
+  }, []);
 
   // Validation functions
   const validateEmail = (email) => {
@@ -40,6 +57,8 @@ const Login = () => {
   // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log('Input changed:', name, value);
+    
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -56,6 +75,7 @@ const Login = () => {
 
   // Validate form
   const validateForm = () => {
+    console.log('Validating form...');
     const newErrors = {};
 
     const emailError = validateEmail(formData.email);
@@ -65,25 +85,45 @@ const Login = () => {
     if (passwordError) newErrors.password = passwordError;
 
     setErrors(newErrors);
+    console.log('Validation errors:', newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   // Handle submit
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    console.log('=== FORM SUBMIT TRIGGERED ===');
+    console.log('Event:', e);
+    
+    if (e && e.preventDefault) {
+      e.preventDefault();
+      console.log('preventDefault called');
+    }
+
+    console.log('Form data:', formData);
 
     if (!validateForm()) {
+      console.log('Validation failed, stopping submission');
       return;
     }
 
+    console.log('Validation passed, attempting login...');
+
     try {
+      console.log('Calling login function with:', {
+        email: formData.email,
+        password: '***hidden***'
+      });
+
       const data = await login({
         email: formData.email,
         password: formData.password,
       });
 
+      console.log('Login response:', data);
+
       // Check if OTP verification is required
       if (data.requiresPhoneVerification) {
+        console.log('OTP verification required, navigating to /verify-otp');
         navigate('/verify-otp', { 
           state: { 
             userId: data.userId,
@@ -95,30 +135,49 @@ const Login = () => {
 
       // Store token if provided
       if (data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('authToken', data.token); // For navbar compatibility
+        try {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('authToken', data.token);
+          console.log('Token stored successfully');
+        } catch (storageError) {
+          console.error('localStorage error:', storageError);
+        }
       }
 
       // Store user data for navbar
       if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
+        try {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('User data stored successfully');
+        } catch (storageError) {
+          console.error('localStorage error:', storageError);
+        }
       }
 
       // Route based on user role
       const userRole = data.user?.role || data.role;
+      console.log('User role:', userRole);
       
       if (userRole === 'admin') {
-        // Navigate to admin dashboard
+        console.log('Navigating to /admin');
         navigate('/admin');
       } else {
-        // Navigate to home page for regular users
+        console.log('Navigating to /');
         navigate('/');
       }
     } catch (error) {
+      console.error('Login error:', error);
       setErrors({ 
         general: error.message || 'Login failed. Please try again.' 
       });
     }
+  };
+
+  // Handle button click (for mobile compatibility)
+  const handleButtonClick = (e) => {
+    console.log('Button clicked');
+    e.preventDefault();
+    handleSubmit(e);
   };
 
   return (
@@ -142,7 +201,7 @@ const Login = () => {
         </div>
 
         {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
           {/* General Error */}
           {(errors.general || authError) && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
@@ -153,7 +212,10 @@ const Login = () => {
           <div className="space-y-5">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2 tracking-wide">
+              <label 
+                htmlFor="email" 
+                className="block text-sm font-medium text-gray-700 mb-2 tracking-wide"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -180,7 +242,10 @@ const Login = () => {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2 tracking-wide">
+              <label 
+                htmlFor="password" 
+                className="block text-sm font-medium text-gray-700 mb-2 tracking-wide"
+              >
                 Password
               </label>
               <div className="relative">
@@ -201,8 +266,13 @@ const Login = () => {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Toggle password visibility');
+                    setShowPassword(!showPassword);
+                  }}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center z-10"
+                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? (
                     <EyeOff size={18} className="text-gray-400 hover:text-gray-600" />
@@ -231,7 +301,8 @@ const Login = () => {
           <button
             type="submit"
             disabled={authLoading}
-            className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium tracking-widest uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleButtonClick}
+            className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 active:bg-gray-900 transition-colors font-medium tracking-widest uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
           >
             {authLoading ? 'Signing In...' : 'Sign In'}
           </button>
