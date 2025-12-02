@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import HiveLogo from '../assets/images/Hive logo.png';
@@ -14,23 +14,18 @@ const Login = () => {
     password: '',
   });
   const [errors, setErrors] = useState({});
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const formRef = useRef(null);
 
-  // Add Eruda console for mobile debugging (remove after debugging)
+  // Mark component as ready after mount
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-    document.body.appendChild(script);
-    script.onload = () => {
-      window.eruda.init();
-    };
-    
-    return () => {
-      // Cleanup
-      if (window.eruda) {
-        window.eruda.destroy();
-      }
-    };
+    // Delay to ensure component is fully mounted
+    const timer = setTimeout(() => {
+      setIsReady(true);
+      console.log('Component ready');
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Validation functions
@@ -59,19 +54,13 @@ const Login = () => {
   const isFormValid = () => {
     return formData.email.trim() !== '' && 
            formData.password.trim() !== '' && 
-           formData.password.length >= 6 &&
-           hasInteracted;
+           formData.password.length >= 6;
   };
 
   // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     console.log('Input changed:', name, value);
-    
-    // Mark that user has interacted with form
-    if (!hasInteracted) {
-      setHasInteracted(true);
-    }
     
     setFormData((prev) => ({
       ...prev,
@@ -83,6 +72,14 @@ const Login = () => {
       setErrors((prev) => ({
         ...prev,
         [name]: '',
+      }));
+    }
+
+    // Clear general error when user types
+    if (errors.general) {
+      setErrors((prev) => ({
+        ...prev,
+        general: '',
       }));
     }
   };
@@ -106,35 +103,40 @@ const Login = () => {
   // Handle submit
   const handleSubmit = async (e) => {
     console.log('=== FORM SUBMIT TRIGGERED ===');
+    console.log('isReady:', isReady);
+    console.log('Form data:', formData);
     
+    // ALWAYS prevent default
     if (e && e.preventDefault) {
       e.preventDefault();
+      e.stopPropagation();
       console.log('preventDefault called');
     }
 
-    // Prevent submission if user hasn't interacted
-    if (!hasInteracted) {
-      console.log('Form submission blocked - no user interaction');
-      return;
+    // Block if component not ready (prevents reload triggers)
+    if (!isReady) {
+      console.log('⚠️ Form submission blocked - component not ready');
+      return false;
     }
 
-    // Prevent submission if form is empty
+    // Block if form is empty
     if (!formData.email || !formData.password) {
-      console.log('Form submission blocked - empty fields');
-      setErrors({
-        general: 'Please fill in all fields'
-      });
-      return;
+      console.log('⚠️ Form submission blocked - empty fields');
+      return false;
     }
 
-    console.log('Form data:', formData);
+    // Block if form is invalid
+    if (!isFormValid()) {
+      console.log('⚠️ Form submission blocked - invalid form');
+      return false;
+    }
 
     if (!validateForm()) {
-      console.log('Validation failed, stopping submission');
-      return;
+      console.log('⚠️ Validation failed, stopping submission');
+      return false;
     }
 
-    console.log('Validation passed, attempting login...');
+    console.log('✅ Validation passed, attempting login...');
 
     try {
       console.log('Calling login function with:', {
@@ -199,6 +201,8 @@ const Login = () => {
         general: error.message || 'Login failed. Please try again.' 
       });
     }
+
+    return false;
   };
 
   return (
@@ -222,7 +226,13 @@ const Login = () => {
         </div>
 
         {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate autoComplete="off">
+        <form 
+          ref={formRef}
+          className="mt-8 space-y-6" 
+          onSubmit={handleSubmit}
+          noValidate 
+          autoComplete="off"
+        >
           {/* General Error */}
           {(errors.general || authError) && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
