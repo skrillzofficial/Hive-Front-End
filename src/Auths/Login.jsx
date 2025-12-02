@@ -14,6 +14,7 @@ const Login = () => {
     password: '',
   });
   const [errors, setErrors] = useState({});
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Add Eruda console for mobile debugging (remove after debugging)
   useEffect(() => {
@@ -54,10 +55,23 @@ const Login = () => {
     return '';
   };
 
+  // Check if form is valid for button enabling
+  const isFormValid = () => {
+    return formData.email.trim() !== '' && 
+           formData.password.trim() !== '' && 
+           formData.password.length >= 6 &&
+           hasInteracted;
+  };
+
   // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     console.log('Input changed:', name, value);
+    
+    // Mark that user has interacted with form
+    if (!hasInteracted) {
+      setHasInteracted(true);
+    }
     
     setFormData((prev) => ({
       ...prev,
@@ -92,11 +106,25 @@ const Login = () => {
   // Handle submit
   const handleSubmit = async (e) => {
     console.log('=== FORM SUBMIT TRIGGERED ===');
-    console.log('Event:', e);
     
     if (e && e.preventDefault) {
       e.preventDefault();
       console.log('preventDefault called');
+    }
+
+    // Prevent submission if user hasn't interacted
+    if (!hasInteracted) {
+      console.log('Form submission blocked - no user interaction');
+      return;
+    }
+
+    // Prevent submission if form is empty
+    if (!formData.email || !formData.password) {
+      console.log('Form submission blocked - empty fields');
+      setErrors({
+        general: 'Please fill in all fields'
+      });
+      return;
     }
 
     console.log('Form data:', formData);
@@ -173,13 +201,6 @@ const Login = () => {
     }
   };
 
-  // Handle button click (for mobile compatibility)
-  const handleButtonClick = (e) => {
-    console.log('Button clicked');
-    e.preventDefault();
-    handleSubmit(e);
-  };
-
   return (
     <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -201,7 +222,7 @@ const Login = () => {
         </div>
 
         {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate autoComplete="off">
           {/* General Error */}
           {(errors.general || authError) && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
@@ -226,7 +247,7 @@ const Login = () => {
                   id="email"
                   name="email"
                   type="email"
-                  autoComplete="email"
+                  autoComplete="off"
                   value={formData.email}
                   onChange={handleChange}
                   className={`block w-full pl-10 pr-3 py-3 border ${
@@ -256,7 +277,7 @@ const Login = () => {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete="off"
                   value={formData.password}
                   onChange={handleChange}
                   className={`block w-full pl-10 pr-12 py-3 border ${
@@ -300,8 +321,7 @@ const Login = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={authLoading}
-            onClick={handleButtonClick}
+            disabled={authLoading || !isFormValid()}
             className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 active:bg-gray-900 transition-colors font-medium tracking-widest uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
           >
             {authLoading ? 'Signing In...' : 'Sign In'}
