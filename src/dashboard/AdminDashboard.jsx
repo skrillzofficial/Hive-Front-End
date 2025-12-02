@@ -335,22 +335,22 @@ const AdminDashboard = () => {
 
   const renderOrders = () => (
     <div className="bg-white rounded-lg border border-gray-200">
-      <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h3 className="text-lg font-semibold text-black tracking-wide uppercase">
+      <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h3 className="text-base sm:text-lg font-semibold text-black tracking-wide uppercase">
           All Orders
         </h3>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
             <Filter size={16} />
-            Filter
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800">
+          <button className="flex items-center gap-2 px-3 py-2 text-sm bg-black text-white rounded-lg hover:bg-gray-800">
             <Download size={16} />
-            Export
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      
+      {/* Desktop Table View */}
+      <div className="hidden md:block">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -377,19 +377,19 @@ const AdminDashboard = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {recentOrders.map((order) => (
               <tr key={order.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                <td className="px-6 py-4 text-sm font-medium text-black">
                   {order.id}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <td className="px-6 py-4 text-sm text-gray-600">
                   {order.customer}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <td className="px-6 py-4 text-sm text-gray-600">
                   {order.date}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                <td className="px-6 py-4 text-sm font-medium text-black">
                   ₦{order.total.toLocaleString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4">
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(
                       order.status
@@ -399,15 +399,15 @@ const AdminDashboard = () => {
                     {order.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                <td className="px-6 py-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <button className="p-1 hover:bg-gray-100 rounded">
+                    <button className="p-1 hover:bg-gray-100 rounded" title="View">
                       <Eye size={16} />
                     </button>
-                    <button className="p-1 hover:bg-gray-100 rounded">
+                    <button className="p-1 hover:bg-gray-100 rounded" title="Edit">
                       <Edit size={16} />
                     </button>
-                    <button className="p-1 hover:bg-gray-100 rounded">
+                    <button className="p-1 hover:bg-gray-100 rounded" title="More">
                       <MoreVertical size={16} />
                     </button>
                   </div>
@@ -417,6 +417,47 @@ const AdminDashboard = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden divide-y divide-gray-200">
+        {recentOrders.map((order) => (
+          <div key={order.id} className="p-4 hover:bg-gray-50">
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <p className="font-semibold text-black text-sm">{order.id}</p>
+                <p className="text-xs text-gray-600 mt-1">{order.customer}</p>
+              </div>
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  order.status
+                )}`}
+              >
+                {getStatusIcon(order.status)}
+                {order.status}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <div>
+                <p className="text-xs text-gray-500">{order.date}</p>
+                <p className="font-semibold text-black mt-1">
+                  ₦{order.total.toLocaleString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button className="p-2 hover:bg-gray-100 rounded" title="View">
+                  <Eye size={16} />
+                </button>
+                <button className="p-2 hover:bg-gray-100 rounded" title="Edit">
+                  <Edit size={16} />
+                </button>
+                <button className="p-2 hover:bg-gray-100 rounded" title="More">
+                  <MoreVertical size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
@@ -424,8 +465,8 @@ const AdminDashboard = () => {
     <div className="space-y-6">
       {!showProductForm && (
         <div className="bg-white rounded-lg border border-gray-200">
-          <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-lg font-semibold text-black tracking-wide uppercase">
+          <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 className="text-base sm:text-lg font-semibold text-black tracking-wide uppercase">
               Products ({products.length})
             </h3>
             <button
@@ -433,7 +474,7 @@ const AdminDashboard = () => {
                 setShowProductForm(true);
                 setEditingProduct(null);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 tracking-wide uppercase text-sm font-medium"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 tracking-wide uppercase text-xs sm:text-sm font-medium w-full sm:w-auto justify-center"
             >
               <Plus size={16} />
               Add Product
@@ -447,7 +488,7 @@ const AdminDashboard = () => {
           )}
 
           {error && (
-            <div className="p-6 bg-red-50 border border-red-200 rounded m-4">
+            <div className="p-4 sm:p-6 bg-red-50 border border-red-200 rounded m-4">
               <p className="text-red-800">Error: {error}</p>
               <button
                 onClick={fetchProducts}
@@ -459,93 +500,149 @@ const AdminDashboard = () => {
           )}
 
           {!loading && !error && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Stock
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map((product) => (
-                    <tr key={product._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                        {product.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
-                        {product.category}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                        ₦{product.price?.toLocaleString()}
-                        {product.salePrice && (
-                          <span className="text-gray-500 line-through ml-2">
-                            ₦{product.salePrice.toLocaleString()}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {product.stockCount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                            product.inStock
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {product.inStock ? "In Stock" : "Out of Stock"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEditProduct(product)}
-                            className="p-1 hover:bg-gray-100 rounded text-blue-600"
-                            title="Edit product"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product._id)}
-                            className="p-1 hover:bg-red-100 rounded text-red-600"
-                            title="Delete product"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stock
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {products.map((product) => (
+                      <tr key={product._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 text-sm font-medium text-black">
+                          {product.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 capitalize">
+                          {product.category}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-black">
+                          ₦{product.price?.toLocaleString()}
+                          {product.salePrice && (
+                            <span className="text-gray-500 line-through ml-2 text-xs">
+                              ₦{product.salePrice.toLocaleString()}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {product.stockCount}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              product.inStock
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {product.inStock ? "In Stock" : "Out of Stock"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEditProduct(product)}
+                              className="p-1 hover:bg-gray-100 rounded text-blue-600"
+                              title="Edit product"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(product._id)}
+                              className="p-1 hover:bg-red-100 rounded text-red-600"
+                              title="Delete product"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-gray-200">
+                {products.map((product) => (
+                  <div key={product._id} className="p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-black text-sm truncate">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1 capitalize">
+                          {product.category}
+                        </p>
+                      </div>
+                      <span
+                        className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                          product.inStock
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {product.inStock ? "In Stock" : "Out"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-black text-sm">
+                          ₦{product.price?.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Stock: {product.stockCount}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleEditProduct(product)}
+                          className="p-2 hover:bg-gray-100 rounded text-blue-600"
+                          title="Edit"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product._id)}
+                          className="p-2 hover:bg-red-100 rounded text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               {products.length === 0 && !loading && (
                 <div className="p-6 text-center text-gray-500">
                   <Package size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p>
+                  <p className="text-sm sm:text-base">
                     No products found. Create your first product to get started.
                   </p>
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}
@@ -582,7 +679,7 @@ const AdminDashboard = () => {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md text-gray-600 hover:bg-gray-100 bg-white border border-gray-200"
+          className="lg:hidden fixed top-30 left-6 z-50 p-2 rounded-md text-gray-600 hover:bg-gray-100 bg-white border border-gray-200 shadow-sm"
         >
           {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -625,16 +722,8 @@ const AdminDashboard = () => {
           </nav>
         </aside>
 
-        {/* Overlay */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-6 lg:p-8 pt-20 lg:pt-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-black tracking-wide capitalize">
               {activeTab === "overview" && "Dashboard Overview"}
