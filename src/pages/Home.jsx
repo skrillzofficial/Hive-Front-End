@@ -112,7 +112,7 @@ const Home = () => {
     <div className="min-h-screen bg-white">
       {/* Hero Carousel - Text Left, Image Right */}
       <section className="relative overflow-hidden">
-        <div className="relative w-full min-h-[100vh] md:h-[700px]">
+        <div className="relative w-full min-h-[120vh] md:h-[700px]">
           {carouselSlides.map((slide, index) => (
             <div
               key={slide.id}
@@ -121,9 +121,9 @@ const Home = () => {
               } ${slide.bgColor}`}
             >
               <div className="container mx-auto w-11/12 h-full">
-                <div className="grid grid-cols-1 lg:grid-cols-2 h-full items-center gap-8 lg:gap-16">
+                <div className="grid grid-cols-1 lg:grid-cols-2 h-full items-center gap-3 lg:gap-16">
                   {/* Left Side - Text Content */}
-                  <div className="text-white py-12 lg:py-0">
+                  <div className="text-white py-5 lg:py-0">
                     <p className="text-sm tracking-widest mb-6 opacity-80">{slide.title}</p>
                     <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
                       {slide.subtitle}
