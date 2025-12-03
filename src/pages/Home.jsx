@@ -112,7 +112,7 @@ const Home = () => {
     <div className="min-h-screen bg-white">
       {/* Hero Carousel - Text Left, Image Right */}
       <section className="relative overflow-hidden">
-        <div className="relative w-full h-[600px] md:h-[700px]">
+        <div className="relative w-full min-h-[100vh] md:h-[700px]">
           {carouselSlides.map((slide, index) => (
             <div
               key={slide.id}
