@@ -25,6 +25,9 @@ import Register from "./Auths/Register";
 import ForgotPassword from "./Auths/ForgotPassword";
 import AdminDashboard from "./dashboard/AdminDashboard";
 import VerifyOTP from "./Auths/VerifyOtp";
+import Men from "./pages/Men";
+import Women from "./pages/Women";
+import Checkout from "./checkout/Checkout";
 
 // Layout Component
 const Layout = ({ children }) => {
@@ -56,6 +59,10 @@ const AppRoutes = () => {
               <Routes>
                 {/* Home Route */}
                 <Route path="/" element={<Home />} />
+                
+                {/* Category Pages */}
+                <Route path="/men" element={<Men />} />
+                <Route path="/women" element={<Women />} />
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<Login />} />
@@ -63,13 +70,16 @@ const AppRoutes = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/verify-otp" element={<VerifyOTP />} />
 
-                {/* Shop Routes */}
+                {/* Shop Routes - IMPORTANT: Update these routes */}
                 <Route path="/shop" element={<Shop />} />
                 <Route path="/shop/:category" element={<Shop />} />
                 <Route path="/shop/:category/:subcategory" element={<Shop />} />
 
                 {/* Cart Route */}
                 <Route path="/cart" element={<Cart />} />
+
+                {/* Checkout */}
+                 <Route path="/checkout" element={<Checkout />} />
 
                 {/* Profile Route */}
                 <Route path="/profile" element={<Profile />} />

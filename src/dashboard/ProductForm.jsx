@@ -3,9 +3,9 @@ import { X, Plus, Upload } from "lucide-react";
 import { useProducts } from "../context/ProductContext";
 
 const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
-  const { uploadImage, loading } = useProducts();
+  const { loading } = useProducts();
 
-  const [productFormData, setProductFormData] = useState({
+  const [formData, setFormData] = useState({
     id: "",
     name: "",
     slug: "",
@@ -16,7 +16,6 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
     currency: "NGN",
     inStock: true,
     stockCount: "",
-    images: [],
     sizes: [],
     colors: [],
     description: "",
@@ -27,12 +26,13 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
     tags: [""],
   });
 
-  const [pendingImageFiles, setPendingImageFiles] = useState([]); 
-  const [uploadingImages, setUploadingImages] = useState(false);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
 
   useEffect(() => {
     if (editingProduct) {
-      setProductFormData({
+      setFormData({
         id: editingProduct.id || "",
         name: editingProduct.name || "",
         slug: editingProduct.slug || "",
@@ -41,55 +41,80 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
         price: editingProduct.price || "",
         salePrice: editingProduct.salePrice || "",
         currency: editingProduct.currency || "NGN",
-        inStock:
-          editingProduct.inStock !== undefined ? editingProduct.inStock : true,
+        inStock: editingProduct.inStock !== undefined ? editingProduct.inStock : true,
         stockCount: editingProduct.stockCount || "",
-        images: editingProduct.images || [],
         sizes: editingProduct.sizes || [],
         colors: editingProduct.colors || [],
         description: editingProduct.description || "",
-        features: editingProduct.features?.length
-          ? editingProduct.features
-          : [""],
+        features: editingProduct.features?.length ? editingProduct.features : [""],
         material: editingProduct.material || "",
         care: editingProduct.care || "",
         madeIn: editingProduct.madeIn || "",
         tags: editingProduct.tags?.length ? editingProduct.tags : [""],
       });
+      
+      // Set existing images
+      setExistingImages(editingProduct.images || []);
+      setImagePreviews(editingProduct.images || []);
+    } else {
+      // Reset for new product
+      setFormData({
+        id: "",
+        name: "",
+        slug: "",
+        category: "",
+        subcategory: "",
+        price: "",
+        salePrice: "",
+        currency: "NGN",
+        inStock: true,
+        stockCount: "",
+        sizes: [],
+        colors: [],
+        description: "",
+        features: [""],
+        material: "",
+        care: "",
+        madeIn: "",
+        tags: [""],
+      });
+      setImageFiles([]);
+      setImagePreviews([]);
+      setExistingImages([]);
     }
   }, [editingProduct]);
 
-  const handleProductFormChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setProductFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const handleArrayFieldChange = (field, index, value) => {
-    setProductFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [field]: prev[field].map((item, i) => (i === index ? value : item)),
     }));
   };
 
   const addArrayField = (field) => {
-    setProductFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [field]: [...prev[field], ""],
     }));
   };
 
   const removeArrayField = (field, index) => {
-    setProductFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index),
     }));
   };
 
   const handleSizeToggle = (size) => {
-    setProductFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       sizes: prev.sizes.includes(size)
         ? prev.sizes.filter((s) => s !== size)
@@ -101,89 +126,95 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    // Store files for later upload
-    setPendingImageFiles((prev) => [...prev, ...files]);
+    // Store actual files
+    setImageFiles(prev => [...prev, ...files]);
 
     // Create preview URLs
-    const previewUrls = files.map((file) => URL.createObjectURL(file));
-    setProductFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...previewUrls],
-    }));
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...previews]);
   };
 
   const removeImage = (index) => {
-    setProductFormData((prev) => {
-      const newImages = prev.images.filter((_, i) => i !== index);
-      // Revoke object URL to prevent memory leaks
-      if (prev.images[index].startsWith('blob:')) {
-        URL.revokeObjectURL(prev.images[index]);
-      }
-      return {
-        ...prev,
-        images: newImages,
-      };
-    });
+    const preview = imagePreviews[index];
     
-    // Also remove from pending files
-    setPendingImageFiles((prev) => prev.filter((_, i) => i !== index));
+    // If it's a new upload (blob URL)
+    if (preview.startsWith('blob:')) {
+      URL.revokeObjectURL(preview);
+      
+      // Find which file to remove (count blob URLs before this index)
+      const newUploadIndex = imagePreviews
+        .slice(0, index)
+        .filter(p => p.startsWith('blob:')).length;
+      
+      setImageFiles(prev => prev.filter((_, i) => i !== newUploadIndex));
+    } else {
+      // It's an existing image - remove from existingImages
+      setExistingImages(prev => prev.filter(img => img !== preview));
+    }
+    
+    // Remove from previews
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      setUploadingImages(true);
-
-      // Upload all pending images first
-      let uploadedImageUrls = [];
+      const submitFormData = new FormData();
       
-      if (pendingImageFiles.length > 0) {
-        const uploadPromises = pendingImageFiles.map((file) => uploadImage(file));
-        const uploadResults = await Promise.all(uploadPromises);
-        uploadedImageUrls = uploadResults;
+      // Add all text fields
+      Object.keys(formData).forEach(key => {
+        if (key === 'sizes' || key === 'colors' || key === 'features' || key === 'tags') {
+          // Handle arrays
+          const filteredArray = formData[key].filter(item => item && item.trim() !== '');
+          filteredArray.forEach(item => {
+            submitFormData.append(`${key}[]`, item);
+          });
+        } else if (formData[key] !== undefined && formData[key] !== null && formData[key] !== '') {
+          submitFormData.append(key, formData[key]);
+        }
+      });
+      
+      // Add existing images (for update only)
+      if (editingProduct && existingImages.length > 0) {
+        existingImages.forEach(img => {
+          submitFormData.append('existingImages[]', img);
+        });
       }
+      
+      // Add new image files
+      imageFiles.forEach(file => {
+        submitFormData.append('images', file);
+      });
 
-      // Filter out blob URLs  and keep only real URLs (if editing)
-      const existingImageUrls = productFormData.images.filter(
-        (img) => !img.startsWith('blob:')
-      );
+      // Call onSubmit with FormData and product ID (if editing)
+      await onSubmit(submitFormData, editingProduct?._id);
+      
+      // Cleanup blob URLs
+      imagePreviews.forEach(preview => {
+        if (preview.startsWith('blob:')) {
+          URL.revokeObjectURL(preview);
+        }
+      });
 
-      // Combine existing URLs with newly uploaded URLs
-      const allImageUrls = [...existingImageUrls, ...uploadedImageUrls];
-
-      const productData = {
-        ...productFormData,
-        images: allImageUrls,
-        price: Number(productFormData.price),
-        salePrice: productFormData.salePrice
-          ? Number(productFormData.salePrice)
-          : undefined,
-        stockCount: Number(productFormData.stockCount),
-        features: productFormData.features.filter((f) => f),
-        tags: productFormData.tags.filter((t) => t),
-      };
-
-      await onSubmit(productData);
-
-      // Clear pending files after successful submission
-      setPendingImageFiles([]);
+      // Reset form
+      setImageFiles([]);
+      setImagePreviews([]);
+      setExistingImages([]);
       
     } catch (error) {
-      console.error("Error creating product:", error);
-      alert(`Failed to create product: ${error.message}`);
-    } finally {
-      setUploadingImages(false);
+      console.error("Error submitting form:", error);
+      alert(`Failed to save product: ${error.message}`);
     }
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200">
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-black tracking-wide uppercase">
           {editingProduct ? "Edit Product" : "Add New Product"}
         </h3>
-        <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded">
+        <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded">
           <X size={20} />
         </button>
       </div>
@@ -203,8 +234,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="text"
                 name="id"
-                value={productFormData.id}
-                onChange={handleProductFormChange}
+                value={formData.id}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="e.g., PROD-001"
                 required
@@ -222,8 +253,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="text"
                 name="name"
-                value={productFormData.name}
-                onChange={handleProductFormChange}
+                value={formData.name}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 required
               />
@@ -236,8 +267,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="text"
                 name="slug"
-                value={productFormData.slug}
-                onChange={handleProductFormChange}
+                value={formData.slug}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 required
               />
@@ -249,8 +280,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               </label>
               <select
                 name="category"
-                value={productFormData.category}
-                onChange={handleProductFormChange}
+                value={formData.category}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 required
               >
@@ -267,8 +298,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               </label>
               <select
                 name="subcategory"
-                value={productFormData.subcategory}
-                onChange={handleProductFormChange}
+                value={formData.subcategory}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select Subcategory</option>
@@ -277,6 +308,7 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
                 <option value="hoodies">Hoodies</option>
                 <option value="caps">Caps</option>
                 <option value="tanks">Tanks</option>
+                <option value="jumpsuits">Jumpsuits</option>
               </select>
             </div>
 
@@ -287,8 +319,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="number"
                 name="price"
-                value={productFormData.price}
-                onChange={handleProductFormChange}
+                value={formData.price}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 required
               />
@@ -301,8 +333,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="number"
                 name="salePrice"
-                value={productFormData.salePrice}
-                onChange={handleProductFormChange}
+                value={formData.salePrice}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
@@ -314,8 +346,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="number"
                 name="stockCount"
-                value={productFormData.stockCount}
-                onChange={handleProductFormChange}
+                value={formData.stockCount}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 required
               />
@@ -326,8 +358,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
             <input
               type="checkbox"
               name="inStock"
-              checked={productFormData.inStock}
-              onChange={handleProductFormChange}
+              checked={formData.inStock}
+              onChange={handleInputChange}
               className="w-4 h-4 text-black focus:ring-black border-gray-300 rounded"
             />
             <label className="text-sm font-medium text-gray-700">
@@ -341,9 +373,6 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
           <h4 className="font-semibold text-black uppercase tracking-wide">
             Product Images
           </h4>
-          <p className="text-sm text-gray-600">
-            Images will be uploaded when you click Create Product
-          </p>
 
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
             <input
@@ -366,12 +395,12 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
             </label>
           </div>
 
-          {productFormData.images.length > 0 && (
+          {imagePreviews.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {productFormData.images.map((image, index) => (
+              {imagePreviews.map((preview, index) => (
                 <div key={index} className="relative group">
                   <img
-                    src={image}
+                    src={preview}
                     alt={`Product ${index + 1}`}
                     className="w-full h-32 object-cover rounded-lg border border-gray-200"
                   />
@@ -382,9 +411,9 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
                   >
                     <X size={16} />
                   </button>
-                  {image.startsWith('blob:') && (
-                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-yellow-500 text-white text-xs rounded">
-                      Pending upload
+                  {preview.startsWith('blob:') && (
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-blue-500 text-white text-xs rounded">
+                      New
                     </div>
                   )}
                 </div>
@@ -405,7 +434,7 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
                 type="button"
                 onClick={() => handleSizeToggle(size)}
                 className={`px-4 py-2 rounded-lg border transition-colors ${
-                  productFormData.sizes.includes(size)
+                  formData.sizes.includes(size)
                     ? "bg-black text-white border-black"
                     : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                 }`}
@@ -424,9 +453,9 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
           <input
             type="text"
             placeholder="Enter colors separated by commas (e.g., Black, White, Blue)"
-            value={productFormData.colors.join(", ")}
+            value={formData.colors.join(", ")}
             onChange={(e) =>
-              setProductFormData((prev) => ({
+              setFormData(prev => ({
                 ...prev,
                 colors: e.target.value
                   .split(",")
@@ -450,8 +479,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
             </label>
             <textarea
               name="description"
-              value={productFormData.description}
-              onChange={handleProductFormChange}
+              value={formData.description}
+              onChange={handleInputChange}
               rows="4"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             />
@@ -465,8 +494,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="text"
                 name="material"
-                value={productFormData.material}
-                onChange={handleProductFormChange}
+                value={formData.material}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
@@ -478,8 +507,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="text"
                 name="care"
-                value={productFormData.care}
-                onChange={handleProductFormChange}
+                value={formData.care}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
@@ -491,8 +520,8 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
               <input
                 type="text"
                 name="madeIn"
-                value={productFormData.madeIn}
-                onChange={handleProductFormChange}
+                value={formData.madeIn}
+                onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
@@ -504,7 +533,7 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
           <h4 className="font-semibold text-black uppercase tracking-wide">
             Features
           </h4>
-          {productFormData.features.map((feature, index) => (
+          {formData.features.map((feature, index) => (
             <div key={index} className="flex gap-2">
               <input
                 type="text"
@@ -515,7 +544,7 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
                 placeholder="Feature"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               />
-              {productFormData.features.length > 1 && (
+              {formData.features.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeArrayField("features", index)}
@@ -541,7 +570,7 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
           <h4 className="font-semibold text-black uppercase tracking-wide">
             Tags
           </h4>
-          {productFormData.tags.map((tag, index) => (
+          {formData.tags.map((tag, index) => (
             <div key={index} className="flex gap-2">
               <input
                 type="text"
@@ -552,7 +581,7 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
                 placeholder="Tag"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               />
-              {productFormData.tags.length > 1 && (
+              {formData.tags.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeArrayField("tags", index)}
@@ -576,18 +605,11 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
         {/* Submit Buttons */}
         <div className="flex gap-4 pt-4 border-t">
           <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={loading || uploadingImages}
+            type="submit"
+            disabled={loading}
             className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 tracking-wide uppercase text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploadingImages
-              ? "Uploading images..."
-              : loading
-              ? "Saving..."
-              : editingProduct
-              ? "Update Product"
-              : "Create Product"}
+            {loading ? "Saving..." : editingProduct ? "Update Product" : "Create Product"}
           </button>
           <button
             type="button"
@@ -598,7 +620,7 @@ const ProductForm = ({ editingProduct, onClose, onSubmit }) => {
           </button>
         </div>
       </div>
-    </div>
+    </form>
   );
 };
 

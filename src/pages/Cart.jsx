@@ -7,11 +7,12 @@ const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, updateQuantity, removeFromCart, getCartSubtotal, getTotalSavings } = useCart();
 
-  // Calculate totals
+  // Calculate totals - FREE shipping for orders ₦100,000 and above
   const subtotal = getCartSubtotal();
-  const shipping = subtotal > 100 ? 0 : 10;
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + shipping + tax;
+  const FREE_SHIPPING_THRESHOLD = 100000;
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : null; 
+  const tax = subtotal * 0.05; // 5% VAT
+  const total = shipping === 0 ? subtotal + tax : subtotal + tax; 
   const totalSavings = getTotalSavings();
 
   if (cartItems.length === 0) {
@@ -132,15 +133,15 @@ const Cart = () => {
                         {item.salePrice ? (
                           <div>
                             <p className="text-lg font-bold text-red-600">
-                              ₦{(item.salePrice * item.quantity).toFixed(2)}
+                              ₦{(item.salePrice * item.quantity).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                             <p className="text-sm text-gray-500 line-through">
-                              ₦{(item.price * item.quantity).toFixed(2)}
+                              ₦{(item.price * item.quantity).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                           </div>
                         ) : (
                           <p className="text-lg font-bold text-gray-900">
-                            ₦{(item.price * item.quantity).toFixed(2)}
+                            ₦{(item.price * item.quantity).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         )}
                       </div>
@@ -150,7 +151,7 @@ const Cart = () => {
                     {item.salePrice && (
                       <div className="mt-3 inline-flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-semibold">
                         <Tag className="w-3 h-3" />
-                        Save ₦{((item.price - item.salePrice) * item.quantity).toFixed(2)}
+                        Save ₦{((item.price - item.salePrice) * item.quantity).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     )}
                   </div>
@@ -178,47 +179,72 @@ const Cart = () => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-gray-900">₦{subtotal.toFixed(2)}</span>
+                  <span className="font-semibold text-gray-900">
+                    ₦{subtotal.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
                 
                 {totalSavings > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Savings</span>
-                    <span className="font-semibold">-₦{totalSavings.toFixed(2)}</span>
+                    <span className="font-semibold">
+                      -₦{totalSavings.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
                   <span className="font-semibold text-gray-900">
-                    {shipping === 0 ? 'FREE' : `₦${shipping.toFixed(2)}`}
+                    {shipping === 0 ? (
+                      <span className="text-green-600">FREE</span>
+                    ) : subtotal >= FREE_SHIPPING_THRESHOLD ? (
+                      <span className="text-green-600">FREE</span>
+                    ) : (
+                      <span className="text-gray-500">Calculated at checkout</span>
+                    )}
                   </span>
                 </div>
 
-                {shipping === 0 && (
+                {shipping === 0 || subtotal >= FREE_SHIPPING_THRESHOLD ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-700">
                     🎉 You've qualified for free shipping!
                   </div>
-                )}
-
-                {shipping > 0 && subtotal < 100 && (
+                ) : (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
-                    Add ₦{(100 - subtotal).toFixed(2)} more for free shipping
+                    Add ₦{(FREE_SHIPPING_THRESHOLD - subtotal).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} more for free shipping
                   </div>
                 )}
 
                 <div className="flex justify-between text-gray-600">
-                  <span>Tax (8%)</span>
-                  <span className="font-semibold text-gray-900">₦{tax.toFixed(2)}</span>
+                  <span>VAT (8%)</span>
+                  <span className="font-semibold text-gray-900">
+                    ₦{tax.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-bold text-gray-900">Total</span>
                     <span className="text-2xl font-bold text-gray-900">
-                      ₦{total.toFixed(2)}
+                      {shipping === 0 || subtotal >= FREE_SHIPPING_THRESHOLD ? (
+                        <>
+                          ₦{total.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          <span className="text-xs text-green-600 ml-2">(Free Shipping)</span>
+                        </>
+                      ) : (
+                        <>
+                          ₦{total.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          <span className="text-xs text-gray-500 ml-2">+ Shipping</span>
+                        </>
+                      )}
                     </span>
                   </div>
+                  {shipping !== 0 && subtotal < FREE_SHIPPING_THRESHOLD && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Shipping costs will be calculated based on your location during checkout.
+                    </p>
+                  )}
                 </div>
               </div>
 

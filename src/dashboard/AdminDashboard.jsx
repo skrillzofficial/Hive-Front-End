@@ -174,17 +174,29 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const handleSubmitProduct = async (productData) => {
+  // FIXED: Handle product submission with FormData
+  const handleSubmitProduct = async (formData, productId) => {
     try {
-      if (editingProduct) {
-        await updateProduct(editingProduct._id, productData);
+      if (productId) {
+        // Update existing product
+        await updateProduct(productId, formData);
+        alert("Product updated successfully!");
       } else {
-        await createProduct(productData);
+        // Create new product
+        await createProduct(formData);
+        alert("Product created successfully!");
       }
+      
+      // Close form and reset
       setShowProductForm(false);
       setEditingProduct(null);
+      
+      // Refresh products list
+      await fetchProducts();
+      
     } catch (error) {
       console.error("Error saving product:", error);
+      alert(`Failed to save product: ${error.message}`);
     }
   };
 
@@ -196,10 +208,14 @@ const AdminDashboard = () => {
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm("Are you sure you want to delete this product?"))
       return;
+    
     try {
       await deleteProduct(productId);
+      alert("Product deleted successfully!");
+      await fetchProducts();
     } catch (error) {
       console.error("Error deleting product:", error);
+      alert(`Failed to delete product: ${error.message}`);
     }
   };
 

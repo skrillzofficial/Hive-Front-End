@@ -46,39 +46,74 @@ const apiCall = async (endpoint, options = {}) => {
   return response.json();
 };
 
-//  PRODUCT API 
+// PRODUCT API - MATCHES YOUR BACKEND ROUTES EXACTLY
 export const productAPI = {
+  // GET /products/all
   getAll: () => apiCall("/products/all"),
 
+  // GET /products/:identifier
   getById: (id) => apiCall(`/products/${id}`),
 
-  create: (productData) =>
+  // POST /products/create (with FormData)
+  create: (formData) =>
     apiCall("/products/create", {
       method: "POST",
-      body: JSON.stringify(productData),
+      body: formData, // FormData with files
     }),
 
-  update: (id, productData) =>
+  // PATCH /products/:id (with FormData)
+  update: (id, formData) =>
     apiCall(`/products/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(productData),
+      method: "PATCH", 
+      body: formData,  // FormData with files
     }),
 
+  // DELETE /products/:id
   delete: (id) =>
     apiCall(`/products/${id}`, {
       method: "DELETE",
     }),
 
-  uploadImage: (file) => {
-    const formData = new FormData();
-    formData.append("images", file);
+  // DELETE /products/:id/permanent
+  permanentDelete: (id) =>
+    apiCall(`/products/${id}/permanent`, {
+      method: "DELETE",
+    }),
 
-    return apiCall("/products/upload-images", {
-      method: "POST",
-      headers: {},
-      body: formData,
-    });
-  },
+  // GET /products/featured
+  getFeatured: (limit = 8) => 
+    apiCall(`/products/featured?limit=${limit}`),
+
+  // GET /products/new-arrivals
+  getNewArrivals: (limit = 8) => 
+    apiCall(`/products/new-arrivals?limit=${limit}`),
+
+  // GET /products/sale
+  getSaleProducts: () => 
+    apiCall("/products/sale"),
+
+  // GET /products/category/:category
+  getByCategory: (category) => 
+    apiCall(`/products/category/${category}`),
+
+  // GET /products/subcategory/:subcategory
+  getBySubcategory: (subcategory) => 
+    apiCall(`/products/subcategory/${subcategory}`),
+
+  // GET /products/search?q=query
+  search: (query) => 
+    apiCall(`/products/search?q=${encodeURIComponent(query)}`),
+
+  // PATCH /products/:id/stock
+  updateStock: (id, stockData) =>
+    apiCall(`/products/${id}/stock`, {
+      method: "PATCH",
+      body: JSON.stringify(stockData),
+    }),
+
+  // GET /products/:id/availability?quantity=1
+  checkAvailability: (id, quantity = 1) =>
+    apiCall(`/products/${id}/availability?quantity=${quantity}`),
 };
 
 // USER API 
@@ -129,13 +164,13 @@ export const userAPI = {
 
   updateProfile: (userData) =>
     apiCall("/profile", {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(userData),
     }),
 
   updatePassword: (passwordData) =>
     apiCall("/password", {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(passwordData),
     }),
 

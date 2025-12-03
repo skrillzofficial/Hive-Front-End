@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, ShoppingCart, Heart, Truck, RotateCcw, Shield, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
-import { getProductBySlug, products } from '../data/ProductData';
 import { useCart } from '../context/CartContext';
+import { useProducts } from '../context/ProductContext';
 
 const ProductDetails = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart, isInCart } = useCart();
+  const { products, loading: productsLoading } = useProducts();
   
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('');
@@ -15,38 +16,42 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch product by slug from URL params
-    if (slug) {
-      const foundProduct = getProductBySlug(slug);
-      if (foundProduct) {
-        setProduct(foundProduct);
-        setSelectedColor(foundProduct.colors[0]);
-        // Auto-select first size if only one size available
-        if (foundProduct.sizes.length === 1) {
-          setSelectedSize(foundProduct.sizes[0]);
+    // Wait for products to load from context
+    if (!productsLoading && products.length > 0) {
+      if (slug) {
+        const foundProduct = products.find(p => p.slug === slug);
+        if (foundProduct) {
+          setProduct(foundProduct);
+          setSelectedColor(foundProduct.colors?.[0] || '');
+          // Auto-select first size if only one size available
+          if (foundProduct.sizes?.length === 1) {
+            setSelectedSize(foundProduct.sizes[0]);
+          }
+          setLoading(false);
+        } else {
+          // Product not found
+          setLoading(false);
+        }
+      } else {
+        // No slug provided, show first product as demo
+        setProduct(products[0]);
+        setSelectedColor(products[0]?.colors?.[0] || '');
+        if (products[0]?.sizes?.length === 1) {
+          setSelectedSize(products[0].sizes[0]);
         }
         setLoading(false);
-      } else {
-        // Product not found, redirect or show error
-        setLoading(false);
       }
-    } else {
-      // No slug provided, show first product as demo
-      setProduct(products[0]);
-      setSelectedColor(products[0].colors[0]);
-      if (products[0].sizes.length === 1) {
-        setSelectedSize(products[0].sizes[0]);
-      }
-      setLoading(false);
     }
-  }, [slug]);
+  }, [slug, products, productsLoading]);
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (!product) return;
+    
+    if (!selectedSize && product.sizes?.length > 0) {
       alert('Please select a size');
       return;
     }
@@ -59,12 +64,12 @@ const ProductDetails = () => {
     // Show success feedback
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
-    
-    console.log('Added to cart:', { product, selectedSize, selectedColor, quantity });
   };
 
   const handleBuyNow = () => {
-    if (!selectedSize) {
+    if (!product) return;
+    
+    if (!selectedSize && product.sizes?.length > 0) {
       alert('Please select a size');
       return;
     }
@@ -79,6 +84,8 @@ const ProductDetails = () => {
   };
 
   const handleQuantityChange = (change) => {
+    if (!product) return;
+    
     const newQuantity = quantity + change;
     if (newQuantity >= 1 && newQuantity <= product.stockCount) {
       setQuantity(newQuantity);
@@ -86,18 +93,22 @@ const ProductDetails = () => {
   };
 
   const nextImage = () => {
+    if (!product || !product.images) return;
+    
     setCurrentImageIndex((prev) => 
       prev === product.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
+    if (!product || !product.images) return;
+    
     setCurrentImageIndex((prev) => 
       prev === 0 ? product.images.length - 1 : prev - 1
     );
   };
 
-  if (loading) {
+  if (productsLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -143,12 +154,18 @@ const ProductDetails = () => {
           {/* Image Gallery */}
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-lg overflow-hidden shadow-lg">
-              <img
-                src={product.images[currentImageIndex]}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-              {product.images.length > 1 && (
+              {product.images?.[currentImageIndex] ? (
+                <img
+                  src={product.images[currentImageIndex]}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                  <span className="text-gray-400">No image available</span>
+                </div>
+              )}
+              {product.images && product.images.length > 1 && (
                 <>
                   <button
                     onClick={prevImage}
@@ -164,12 +181,12 @@ const ProductDetails = () => {
                   </button>
                 </>
               )}
-              {product.salePrice && (
+              {product.salePrice && product.salePrice > 0 && (
                 <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
                   SALE
                 </div>
               )}
-              {product.tags.includes('new-arrival') && (
+              {product.tags?.includes('new-arrival') && (
                 <div className="absolute top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
                   NEW
                 </div>
@@ -184,7 +201,7 @@ const ProductDetails = () => {
             </div>
 
             {/* Thumbnail Images */}
-            {product.images.length > 1 && (
+            {product.images && product.images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto">
                 {product.images.map((image, index) => (
                   <button
@@ -213,19 +230,19 @@ const ProductDetails = () => {
                     <Star
                       key={i}
                       className={`w-5 h-5 ${
-                        i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                        i < Math.floor(product.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
                       }`}
                     />
                   ))}
                 </div>
                 <span className="text-sm text-gray-600">
-                  {product.rating} ({product.reviews} reviews)
+                  {product.rating || 0} ({product.reviews || 0} reviews)
                 </span>
               </div>
 
               {/* Price */}
               <div className="flex items-center gap-3">
-                {product.salePrice ? (
+                {product.salePrice && product.salePrice > 0 ? (
                   <>
                     <span className="text-3xl font-bold text-red-600">
                       ₦{product.salePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -249,29 +266,31 @@ const ProductDetails = () => {
             <p className="text-gray-600 leading-relaxed">{product.description}</p>
 
             {/* Size Selection */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-3">
-                Select Size {!selectedSize && <span className="text-red-500">*</span>}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`px-6 py-3 border-2 rounded-lg font-semibold transition ${
-                      selectedSize === size
-                        ? 'border-black bg-black text-white'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+            {product.sizes && product.sizes.length > 0 && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  Select Size {!selectedSize && <span className="text-red-500">*</span>}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-6 py-3 border-2 rounded-lg font-semibold transition ${
+                        selectedSize === size
+                          ? 'border-black bg-black text-white'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Color Selection */}
-            {product.colors.length > 1 && (
+            {product.colors && product.colors.length > 1 && (
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-3">Color</label>
                 <div className="flex gap-2">
@@ -308,13 +327,13 @@ const ProductDetails = () => {
                   <button
                     onClick={() => handleQuantityChange(1)}
                     className="px-4 py-2 hover:bg-gray-100 transition"
-                    disabled={quantity >= product.stockCount}
+                    disabled={quantity >= (product.stockCount || 0)}
                   >
                     +
                   </button>
                 </div>
                 <span className="text-sm text-gray-500">
-                  {product.stockCount} items available
+                  {product.stockCount || 0} items available
                 </span>
               </div>
             </div>
@@ -354,17 +373,19 @@ const ProductDetails = () => {
             </div>
 
             {/* Features */}
-            <div className="border-t pt-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Features</h3>
-              <ul className="space-y-2">
-                {product.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-2 text-gray-600">
-                    <span className="text-black mt-1">•</span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {product.features && product.features.length > 0 && (
+              <div className="border-t pt-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Features</h3>
+                <ul className="space-y-2">
+                  {product.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-2 text-gray-600">
+                      <span className="text-black mt-1">•</span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Shipping Info */}
             <div className="border-t pt-6 space-y-3">
@@ -395,9 +416,15 @@ const ProductDetails = () => {
             <div className="border-t pt-6 space-y-2">
               <h3 className="font-semibold text-gray-900 mb-3">Product Details</h3>
               <div className="text-sm text-gray-600 space-y-1">
-                <p><span className="font-medium">Material:</span> {product.material}</p>
-                <p><span className="font-medium">Care:</span> {product.care}</p>
-                <p><span className="font-medium">Made in:</span> {product.madeIn}</p>
+                {product.material && (
+                  <p><span className="font-medium">Material:</span> {product.material}</p>
+                )}
+                {product.care && (
+                  <p><span className="font-medium">Care:</span> {product.care}</p>
+                )}
+                {product.madeIn && (
+                  <p><span className="font-medium">Made in:</span> {product.madeIn}</p>
+                )}
               </div>
             </div>
           </div>

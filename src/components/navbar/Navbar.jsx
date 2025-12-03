@@ -133,10 +133,10 @@ const Navbar = () => {
             <NavLink to="/shop" className={getNavLinkClass}>
               Shop
             </NavLink>
-            <NavLink to="/shop/men" className={getNavLinkClass}>
+            <NavLink to="/men" className={getNavLinkClass}>
               Men
             </NavLink>
-            <NavLink to="/shop/women" className={getNavLinkClass}>
+            <NavLink to="/women" className={getNavLinkClass}>
               Women
             </NavLink>
           </div>
@@ -353,14 +353,14 @@ const Navbar = () => {
                 Shop
               </NavLink>
               <NavLink
-                to="/shop/men"
+                to="/men"
                 className={getMobileNavLinkClass}
                 onClick={handleMobileNavClick}
               >
                 Men
               </NavLink>
               <NavLink
-                to="/shop/women"
+                to="/women"
                 className={getMobileNavLinkClass}
                 onClick={handleMobileNavClick}
               >

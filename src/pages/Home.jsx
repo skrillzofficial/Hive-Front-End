@@ -1,456 +1,452 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { products, categories, subcategories, getFeaturedProducts, getSaleProducts } from '../data/ProductData';
+import { useProducts } from '../context/ProductContext';
 
 const Home = () => {
   const navigate = useNavigate();
+  const { products, loading, error } = useProducts();
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Get featured products for carousel
-  const featuredProducts = getFeaturedProducts();
-  const saleProducts = getSaleProducts();
+  // Filter products by your categories
+  const hoodies = products.filter(p => p.subcategory === 'hoodies');
+  const polos = products.filter(p => p.subcategory === 'polos');
+  const shirts = products.filter(p => p.subcategory === 'shirts');
+  const caps = products.filter(p => p.subcategory === 'caps');
+  const tanks = products.filter(p => p.subcategory === 'tanks');
+  const jumpsuits = products.filter(p => p.subcategory === 'jumpsuits');
+  
+  // Featured products
+  const featuredProducts = products.filter(p => p.tags?.includes('featured'));
+  // New arrivals
+  const newArrivalProducts = products.filter(p => p.tags?.includes('new-arrival')).slice(0, 4);
 
-  // Get specific products for carousel from ProductData
-  const hoodieProduct = products.find(p => p.subcategory === 'hoodies') || products[0];
-  const poloProduct = products.find(p => p.subcategory === 'polos') || products[1];
-  const capProduct = products.find(p => p.subcategory === 'caps') || products[2];
-
+  // Carousel slides with text on left, image on right
   const carouselSlides = [
     {
       id: 1,
-      image: hoodieProduct.images[0],
-      title: "HOODIES COLLECTION",
-      subtitle: "Comfort meets style",
-      category: "hoodies",
-      buttonText: "SHOP HOODIES",
-      position: "object-cover object-center",
-      product: hoodieProduct
+      title: "NEW ARRIVALS",
+      subtitle: "FRESH STYLES",
+      description: "Discover our latest collection of premium apparel",
+      buttonText: "Shop Now",
+      image: newArrivalProducts[0]?.images?.[0] || '',
+      bgColor: "bg-black"
     },
     {
       id: 2,
-      image: poloProduct.images[0],
-      title: "POLO ESSENTIALS",
-      subtitle: "Classic elegance for every occasion",
-      category: "polos",
-      buttonText: "SHOP POLOS",
-      position: "object-cover object-center",
-      product: poloProduct
+      title: "HOODIES",
+      subtitle: "COMFORT & STYLE",
+      description: "Premium hoodies for everyday comfort and modern style",
+      buttonText: "Explore Hoodies",
+      image: hoodies[0]?.images?.[0] || '',
+      bgColor: "bg-gray-900"
     },
     {
       id: 3,
-      image: capProduct.images[0],
-      title: "CAPS COLLECTION",
-      subtitle: "Complete your look",
-      category: "caps",
-      buttonText: "EXPLORE CAPS",
-      position: "object-cover object-center",
-      product: capProduct
+      title: "POLO SHIRTS",
+      subtitle: "CLASSIC ELEGANCE",
+      description: "Timeless polo shirts for smart casual occasions",
+      buttonText: "View Polos",
+      image: polos[0]?.images?.[0] || '',
+      bgColor: "bg-black"
     }
   ];
 
-  // Auto-rotate carousel every 10 seconds
+  // Auto-rotate carousel
   useEffect(() => {
+    if (carouselSlides.length === 0) return;
+    
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-    }, 10000);
+      const nextIndex = (currentSlide + 1) % carouselSlides.length;
+      setCurrentSlide(nextIndex);
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [carouselSlides.length, currentSlide]);
 
-  // Manual slide navigation
+  // Go to specific slide
   const goToSlide = (index) => {
     setCurrentSlide(index);
   };
 
-  // Navigate to subcategory
-  const handleSubcategoryClick = (subcategorySlug) => {
-    navigate(`/shop/all/${subcategorySlug}`);
-  };
+  // Loading state
+  if (loading && products.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="container mx-auto w-11/12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Navigate to category from carousel
-  const handleCarouselButtonClick = (category) => {
-    navigate(`/shop/all/${category}`);
-  };
+  // Error state
+  if (error && products.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="container mx-auto w-11/12 text-center">
+          <p className="text-red-600 mb-4">Error loading products</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-black text-white px-6 py-2 hover:bg-gray-800"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  // Get first 3 sale products for hot deals
-  const hotDeals = saleProducts.slice(0, 3);
+  // No products state
+  if (products.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="container mx-auto w-11/12 text-center">
+          <p className="text-gray-600">No products available at the moment.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Carousel Section */}
-      <section className="relative h-[500px] lg:h-[650px] overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800">
-        {/* Carousel Slides */}
-        <div className="relative w-full h-full">
+      {/* Hero Carousel - Text Left, Image Right */}
+      <section className="relative overflow-hidden">
+        <div className="relative w-full h-[600px] md:h-[700px]">
           {carouselSlides.map((slide, index) => (
             <div
               key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              className={`absolute inset-0 transition-opacity duration-500 ${
                 index === currentSlide ? 'opacity-100' : 'opacity-0'
-              }`}
+              } ${slide.bgColor}`}
             >
-              {/* Desktop: Split Layout */}
-              <div className="hidden lg:block container mx-auto w-11/12 h-full">
-                <div className="grid grid-cols-2 gap-8 h-full items-center">
-                  
+              <div className="container mx-auto w-11/12 h-full">
+                <div className="grid grid-cols-1 lg:grid-cols-2 h-full items-center gap-8 lg:gap-16">
                   {/* Left Side - Text Content */}
-                  <div className="flex flex-col justify-center z-10">
-                    <p className="text-white text-sm lg:text-base font-light mb-3 tracking-widest uppercase">
+                  <div className="text-white py-12 lg:py-0">
+                    <p className="text-sm tracking-widest mb-6 opacity-80">{slide.title}</p>
+                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
                       {slide.subtitle}
-                    </p>
-                    <h1 className="text-white text-4xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-6 leading-tight">
-                      {slide.title}
                     </h1>
-                    <p className="text-white/80 text-base lg:text-lg mb-8 max-w-md">
-                      {slide.product.description}
+                    <p className="text-lg md:text-xl mb-10 opacity-90 max-w-lg">
+                      {slide.description}
                     </p>
-                    <div className="flex items-center gap-4 mb-8">
-                      <span className="text-white text-3xl font-bold">
-                        ₦{(slide.product.salePrice || slide.product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                      {slide.product.salePrice && (
-                        <span className="text-white/60 text-xl line-through">
-                          ₦{slide.product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-4">
-                      <button 
-                        onClick={() => handleCarouselButtonClick(slide.category)}
-                        className="bg-white text-black px-8 py-4 font-semibold text-sm tracking-wider hover:bg-gray-100 transition-all duration-300 uppercase"
-                      >
-                        {slide.buttonText}
-                      </button>
-                      <button 
-                        onClick={() => navigate(`/product/${slide.product.slug}`)}
-                        className="bg-transparent border-2 border-white text-white px-8 py-4 font-semibold text-sm tracking-wider hover:bg-white hover:text-black transition-all duration-300 uppercase"
-                      >
-                        View Details
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => navigate('/shop')}
+                      className="bg-white text-black px-10 py-4 font-medium hover:bg-gray-100"
+                    >
+                      {slide.buttonText}
+                    </button>
                   </div>
 
-                  {/* Right Side - Product Image */}
-                  <div className="flex items-center justify-center h-full">
-                    <div className="relative w-full max-w-lg h-[500px] flex items-center justify-center">
-                      <img
-                        src={slide.image}
-                        alt={slide.title}
-                        className="w-full h-full object-contain drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
-                      />
-                      {/* Decorative background */}
-                      <div className="absolute inset-0 bg-gradient-radial from-white/5 to-transparent -z-10 blur-3xl"></div>
-                      
-                      {/* Product Badge */}
-                      {slide.product.tags.includes('new-arrival') && (
-                        <div className="absolute top-8 right-8 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold uppercase shadow-lg">
-                          New Arrival
-                        </div>
-                      )}
-                      {slide.product.salePrice && (
-                        <div className="absolute top-8 right-8 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold uppercase shadow-lg">
-                          {Math.round(((slide.product.price - slide.product.salePrice) / slide.product.price) * 100)}% OFF
-                        </div>
-                      )}
-                    </div>
+                  {/* Right Side - Image */}
+                  <div className="relative h-full flex items-center justify-center">
+                    {slide.image ? (
+                      <div className="relative w-full max-w-lg lg:max-w-xl">
+                        <img
+                          src={slide.image}
+                          alt={slide.subtitle}
+                          className="w-full h-auto object-contain max-h-[500px] lg:max-h-[600px]"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full max-w-lg lg:max-w-xl h-[400px] bg-gray-800/50 flex items-center justify-center">
+                        <span className="text-white/50">Image Preview</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-
-              {/* Mobile/Tablet: Overlay Layout */}
-              <div className="lg:hidden relative w-full h-full">
-                {/* Product Image Background */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <img
-                    src={slide.image}
-                    alt={slide.title}
-                    className="w-full h-full object-contain opacity-40"
-                  />
-                  {/* Dark overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
-                </div>
-
-                {/* Text Content Overlay */}
-                <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-6 z-10">
-                  <div className="max-w-lg">
-                    {/* Product Badge */}
-                    {slide.product.tags.includes('new-arrival') && (
-                      <div className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg mb-4">
-                        New Arrival
-                      </div>
-                    )}
-                    {slide.product.salePrice && (
-                      <div className="inline-block bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg mb-4">
-                        {Math.round(((slide.product.price - slide.product.salePrice) / slide.product.price) * 100)}% OFF
-                      </div>
-                    )}
-                    
-                    <p className="text-white text-xs sm:text-sm font-light mb-2 tracking-widest uppercase">
-                      {slide.subtitle}
-                    </p>
-                    <h1 className="text-white text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
-                      {slide.title}
-                    </h1>
-                    <p className="text-white/90 text-sm sm:text-base mb-6">
-                      {slide.product.description}
-                    </p>
-                    <div className="flex items-center justify-center gap-3 mb-6">
-                      <span className="text-white text-2xl sm:text-3xl font-bold">
-                        ₦{(slide.product.salePrice || slide.product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                      {slide.product.salePrice && (
-                        <span className="text-white/60 text-lg sm:text-xl line-through">
-                          ₦{slide.product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <button 
-                        onClick={() => handleCarouselButtonClick(slide.category)}
-                        className="bg-white text-black px-6 py-3 font-semibold text-xs sm:text-sm tracking-wider hover:bg-gray-100 transition-all duration-300 uppercase"
-                      >
-                        {slide.buttonText}
-                      </button>
-                      <button 
-                        onClick={() => navigate(`/product/${slide.product.slug}`)}
-                        className="bg-transparent border-2 border-white text-white px-6 py-3 font-semibold text-xs sm:text-sm tracking-wider hover:bg-white hover:text-black transition-all duration-300 uppercase"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
           ))}
         </div>
 
-        {/* Carousel Indicators */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-10">
+        {/* Carousel Dots Only - No Navigation Arrows */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-4">
           {carouselSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`transition-all duration-300 ${
-                index === currentSlide 
-                  ? 'bg-white w-10 h-1' 
-                  : 'bg-white/50 w-8 h-1 hover:bg-white/70'
+              className={`w-2 h-2 rounded-full ${
+                index === currentSlide ? 'bg-white' : 'bg-white/50 hover:bg-white/70'
               }`}
-              aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
       </section>
 
-      {/* Product Categories Grid Section */}
-      <section className="py-16 lg:py-24">
-        <div className="container mx-auto w-11/12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
-            {subcategories.map((subcat) => {
-              // Get first product from this subcategory for image
-              const product = products.find(p => p.subcategory === subcat.slug);
-              
-              return (
-                <div 
-                  key={subcat.id} 
-                  onClick={() => handleSubcategoryClick(subcat.slug)}
-                  className="group cursor-pointer"
-                >
-                  <div className="relative overflow-hidden mb-4 bg-gray-100 aspect-3/4">
-                    {product && product.images[0] ? (
-                      <img
-                        src={product.images[0]}
-                        alt={subcat.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-400">{subcat.name}</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
-                  </div>
-                  <h3 className="text-base lg:text-lg font-semibold mb-1 uppercase tracking-wide">
-                    {subcat.name}
-                  </h3>
-                  <p className="text-sm text-gray-600">{subcat.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* New Arrivals Section */}
+      <CategorySection 
+        title="NEW ARRIVALS"
+        products={newArrivalProducts}
+        viewAllPath="/shop?sort=newest"
+        loading={loading}
+      />
 
-      {/* Hot Deals Section */}
-      <section className="py-16 lg:py-24 bg-gray-50">
-        <div className="container mx-auto w-11/12">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-12 text-gray-900 uppercase tracking-wide">Hot Deals</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {hotDeals.map((product) => (
-              <div key={product.id} className="group bg-white">
-                <Link to={`/product/${product.slug}`} className="block">
-                  <div className="relative overflow-hidden mb-5 bg-gray-100 aspect-3/4">
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase">
-                      Sale
-                    </div>
-                    {product.salePrice && (
-                      <div className="absolute top-4 right-4 bg-black text-white px-3 py-1 text-xs font-bold">
-                        {Math.round(((product.price - product.salePrice) / product.price) * 100)}% OFF
-                      </div>
-                    )}
-                  </div>
-                  <div className="px-4 pb-5">
-                    <h3 className="text-xl font-semibold mb-2 text-gray-900 uppercase tracking-wide">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      {product.salePrice ? (
-                        <>
-                          <p className="text-lg font-bold text-red-600">
-                            ₦{product.salePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                          <p className="text-sm text-gray-500 line-through">
-                            ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-lg font-bold text-gray-900">
-                          ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-                <div className="px-4 pb-5">
-                  <button 
-                    onClick={() => navigate(`/product/${product.slug}`)}
-                    className="w-full bg-black text-white py-3 text-sm font-semibold uppercase tracking-wider hover:bg-gray-800 transition-all duration-300"
-                  >
-                    Shop Now
-                  </button>
-                </div>
+      {/* Hoodies Section */}
+      <CategorySection 
+        title="HOODIES"
+        products={hoodies.slice(0, 4)}
+        viewAllPath="/shop/all/hoodies"
+        loading={loading}
+        bgGray
+      />
+
+      {/* Polos Section */}
+      <CategorySection 
+        title="POLOS"
+        products={polos.slice(0, 4)}
+        viewAllPath="/shop/all/polos"
+        loading={loading}
+      />
+
+      {/* Shirts Section */}
+      <CategorySection 
+        title="SHIRTS"
+        products={shirts.slice(0, 4)}
+        viewAllPath="/shop/all/shirts"
+        loading={loading}
+        bgGray
+      />
+
+      {/* Caps Section */}
+      <CategorySection 
+        title="CAPS"
+        products={caps.slice(0, 4)}
+        viewAllPath="/shop/all/caps"
+        loading={loading}
+      />
+
+      {/* Featured Products Banner with Image */}
+      <FeaturedBanner 
+        products={featuredProducts.slice(0, 3)}
+        loading={loading}
+      />
+
+      {/* Tanks Section */}
+      <CategorySection 
+        title="TANKS"
+        products={tanks.slice(0, 4)}
+        viewAllPath="/shop/all/tanks"
+        loading={loading}
+        bgGray
+      />
+
+      {/* Jumpsuits Section */}
+      <CategorySection 
+        title="JUMPSUITS"
+        products={jumpsuits.slice(0, 4)}
+        viewAllPath="/shop/all/jumpsuits"
+        loading={loading}
+      />
+
+      {/* CTA Section with Image */}
+      <CTASection />
+    </div>
+  );
+};
+
+// Reusable Category Section Component
+const CategorySection = ({ title, products, viewAllPath, loading, bgGray = false }) => {
+  const navigate = useNavigate();
+
+  if (!loading && products.length === 0) return null;
+
+  return (
+    <section className={`py-16 ${bgGray ? 'bg-gray-50' : 'bg-white'}`}>
+      <div className="container mx-auto w-11/12">
+        <div className="flex justify-between items-center mb-12">
+          <h2 className="text-3xl font-bold">{title}</h2>
+          {!loading && (
+            <button 
+              onClick={() => navigate(viewAllPath)}
+              className="text-sm font-medium hover:text-gray-700"
+            >
+              View All ›
+            </button>
+          )}
+        </div>
+        
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="bg-gray-200 aspect-square mb-4 rounded-lg"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Featured Products Section */}
-      <section className="py-16 lg:py-24 bg-white">
-        <div className="container mx-auto w-11/12">
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 uppercase tracking-wide">
-              Featured Products
-            </h2>
-            <Link 
-              to="/shop" 
-              className="text-sm font-semibold uppercase tracking-wider hover:underline"
-            >
-              View All
-            </Link>
-          </div>
-          
+        ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {featuredProducts.slice(0, 8).map((product) => (
+            {products.map((product) => (
+              <ProductCard 
+                key={product._id} 
+                product={product}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+// Reusable Product Card
+const ProductCard = ({ product }) => {
+  return (
+    <Link 
+      to={`/product/${product.slug}`}
+      className="group"
+    >
+      <div className="relative mb-4 bg-gray-100 aspect-square overflow-hidden rounded-lg">
+        <img
+          src={product.images?.[0]}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        
+        {/* Sale Badge */}
+        {product.salePrice && product.salePrice > 0 && (
+          <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 text-xs font-bold">
+            SALE
+          </div>
+        )}
+        
+        {/* New Badge */}
+        {product.tags?.includes('new-arrival') && (
+          <div className="absolute top-2 left-2 bg-black text-white px-2 py-1 text-xs font-bold">
+            NEW
+          </div>
+        )}
+      </div>
+      <h3 className="font-medium text-sm mb-1 line-clamp-2 group-hover:text-gray-700">
+        {product.name}
+      </h3>
+      <div className="flex items-center gap-2">
+        {product.salePrice && product.salePrice > 0 ? (
+          <>
+            <span className="font-bold">₦{product.salePrice.toLocaleString('en-NG')}</span>
+            <span className="text-sm text-gray-500 line-through">₦{product.price.toLocaleString('en-NG')}</span>
+          </>
+        ) : (
+          <span className="font-bold">₦{product.price.toLocaleString('en-NG')}</span>
+        )}
+      </div>
+    </Link>
+  );
+};
+
+// Featured Products Banner Component
+const FeaturedBanner = ({ products, loading }) => {
+  const navigate = useNavigate();
+
+  if (!loading && products.length === 0) return null;
+
+  return (
+    <section className="py-16 bg-black text-white">
+      <div className="container mx-auto w-11/12">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4">Featured Products</h2>
+          <p className="text-gray-300">Handpicked selections from our collection</p>
+        </div>
+        
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="bg-gray-800 aspect-square mb-4 rounded-lg"></div>
+                <div className="h-5 bg-gray-800 rounded mb-3 w-3/4 mx-auto"></div>
+                <div className="h-4 bg-gray-800 rounded w-1/2 mx-auto"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {products.map((product) => (
               <Link 
-                key={product.id} 
+                key={product._id} 
                 to={`/product/${product.slug}`}
-                className="group cursor-pointer"
+                className="group"
               >
-                <div className="relative overflow-hidden mb-4 bg-gray-100 aspect-square">
+                <div className="relative mb-4 bg-white aspect-square overflow-hidden rounded-lg">
                   <img
-                    src={product.images[0]}
+                    src={product.images?.[0]}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  {product.tags.includes('new-arrival') && (
-                    <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 text-xs font-bold uppercase">
-                      New
-                    </div>
-                  )}
                 </div>
-                <h3 className="text-sm font-semibold mb-1 text-gray-900 line-clamp-2">
+                <h3 className="font-medium text-lg mb-2 text-center group-hover:text-gray-300">
                   {product.name}
                 </h3>
-                <div className="flex items-center gap-2">
-                  {product.salePrice ? (
-                    <>
-                      <p className="text-base font-bold text-gray-900">
-                        ₦{product.salePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <p className="text-xs text-gray-500 line-through">
-                        ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-base font-bold text-gray-900">
-                      ₦{product.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 mt-1">
-                  <div className="flex">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-3 h-3 ${
-                          i < Math.floor(product.rating)
-                            ? 'text-yellow-400 fill-current'
-                            : 'text-gray-300 fill-current'
-                        }`}
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <span className="text-xs text-gray-500">({product.reviews})</span>
-                </div>
+                <p className="font-bold text-center">₦{product.price.toLocaleString('en-NG')}</p>
               </Link>
             ))}
           </div>
-        </div>
-      </section>
+        )}
 
-      {/* Featured Banner */}
-      <section className="py-16 lg:py-24 bg-gray-50">
-        <div className="container mx-auto w-11/12">
-          <div className="relative overflow-hidden bg-gray-900 h-[400px] lg:h-[500px] cursor-pointer group"
-            onClick={() => navigate('/shop/all/hoodies')}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1622445275576-721325763afe?w=1600&auto=format&fit=crop&q=80"
-              alt="Hoodies & Streetwear Collection"
-              className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent"></div>
-            
-            <div className="absolute inset-0 flex flex-col justify-center px-8 lg:px-16">
-              <div className="max-w-xl">
-                <p className="text-white text-sm lg:text-base font-light mb-3 tracking-widest uppercase">
-                  New Arrival
-                </p>
-                <h2 className="text-3xl lg:text-5xl font-bold text-white mb-5 uppercase tracking-wide">
-                  Hoodies & Streetwear
-                </h2>
-                <p className="text-white/90 text-base lg:text-lg mb-8">
-                  Premium quality hoodies and casual wear for your everyday style
-                </p>
-                <button className="bg-white text-black px-10 py-4 text-sm font-semibold uppercase tracking-wider hover:bg-gray-100 transition-all duration-300">
-                  Shop Now
+        {!loading && (
+          <div className="text-center mt-12">
+            <button 
+              onClick={() => navigate('/shop')}
+              className="bg-white text-black px-10 py-3 font-medium hover:bg-gray-100"
+            >
+              View All Products
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+// CTA Section with Image
+const CTASection = () => {
+  const navigate = useNavigate();
+
+  return (
+    <section className="py-20 bg-white">
+      <div className="container mx-auto w-11/12">
+        <div className="bg-black rounded-xl overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            {/* Left Side - Image */}
+            <div className="relative h-[400px] lg:h-auto">
+              <img
+                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+                alt="Fashion Collection"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent lg:hidden"></div>
+            </div>
+
+            {/* Right Side - Content */}
+            <div className="p-12 flex flex-col justify-center">
+              <h2 className="text-4xl font-bold text-white mb-6">
+                Discover Premium Style
+              </h2>
+              <p className="text-gray-300 mb-8 text-lg">
+                Elevate your wardrobe with our curated collection of premium apparel. 
+                Each piece is designed for comfort, style, and lasting quality.
+              </p>
+              <div className="space-y-4">
+                <button 
+                  onClick={() => navigate('/shop')}
+                  className="w-full bg-white text-black px-8 py-4 font-medium hover:bg-gray-100 text-center"
+                >
+                  Shop All Collections
+                </button>
+                <button 
+                  onClick={() => navigate('/shop?sort=newest')}
+                  className="w-full bg-transparent border-2 border-white text-white px-8 py-4 font-medium hover:bg-white hover:text-black text-center"
+                >
+                  View New Arrivals
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 };
 

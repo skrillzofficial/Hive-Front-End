@@ -8,7 +8,7 @@ export const ProductProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch all products (Public route)
+  // Fetch all products 
   const fetchProducts = async () => {
     setLoading(true);
     setError(null);
@@ -22,7 +22,7 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  // Fetch single product (Public route)
+  // Fetch single product 
   const fetchProductById = async (id) => {
     setLoading(true);
     setError(null);
@@ -37,15 +37,15 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  // Create product (Admin only - requires authentication)
-  const createProduct = async (productData) => {
+  // Create product (receives FormData with files)
+  const createProduct = async (formData) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await productAPI.create(productData);
+      const data = await productAPI.create(formData);
       
       // Update local state
-      setProducts([...products, data.product]);
+      setProducts(prev => [...prev, data.product]);
       return data;
     } catch (err) {
       setError(err.message);
@@ -55,15 +55,15 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  // Update product (Admin only - requires authentication)
-  const updateProduct = async (id, productData) => {
+  // Update product (receives FormData with files)
+  const updateProduct = async (id, formData) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await productAPI.update(id, productData);
+      const data = await productAPI.update(id, formData);
       
       // Update local state
-      setProducts(products.map(p => p._id === id ? data.product : p));
+      setProducts(prev => prev.map(p => p._id === id ? data.product : p));
       return data;
     } catch (err) {
       setError(err.message);
@@ -73,7 +73,7 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  // Delete product (Admin only - requires authentication)
+  // Delete product 
   const deleteProduct = async (id) => {
     setLoading(true);
     setError(null);
@@ -81,58 +81,13 @@ export const ProductProvider = ({ children }) => {
       await productAPI.delete(id);
       
       // Update local state
-      setProducts(products.filter(p => p._id !== id));
+      setProducts(prev => prev.filter(p => p._id !== id));
       return true;
     } catch (err) {
       setError(err.message);
       throw err;
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Upload image (Admin only - requires authentication)
-  const uploadImage = async (file) => {
-    try {
-      // Get auth token
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found. Please login as admin.');
-      }
-
-      // Determine API URL (same logic as api.js)
-      const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
-      const API_URL = import.meta.env.VITE_API_URL || 
-        (isDevelopment 
-          ? 'http://localhost:5000/api/v1' 
-          : 'https://hive-back-end.onrender.com/api/v1');
-
-      const formData = new FormData();
-      formData.append('images', file);
-      
-      const response = await fetch(`${API_URL}/products/upload-images`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `Upload failed with status ${response.status}`);
-      }
-
-      if (!data.images || !Array.isArray(data.images) || data.images.length === 0) {
-        throw new Error('Invalid response format from server');
-      }
-
-      // Return just the URL string, not an object
-      return data.images[0];
-      
-    } catch (err) {
-      throw err;
     }
   };
 
@@ -150,7 +105,6 @@ export const ProductProvider = ({ children }) => {
     createProduct,
     updateProduct,
     deleteProduct,
-    uploadImage,
   };
 
   return (
