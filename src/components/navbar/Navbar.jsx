@@ -10,6 +10,7 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -79,8 +80,15 @@ const Navbar = () => {
   // Handle logout
   const handleLogout = () => {
     contextLogout();
+    setLogoutModalOpen(false);
     setUserDropdownOpen(false);
     navigate('/');
+  };
+
+  // Open logout modal
+  const openLogoutModal = () => {
+    setLogoutModalOpen(true);
+    setUserDropdownOpen(false);
   };
 
   // Check if user is admin
@@ -232,7 +240,7 @@ const Navbar = () => {
                       
                       <div className="border-t border-gray-200 mt-2 pt-2">
                         <button
-                          onClick={handleLogout}
+                          onClick={openLogoutModal}
                           className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                         >
                           <LogOut size={16} className="mr-3" />
@@ -312,12 +320,12 @@ const Navbar = () => {
                   }
                 }}
                 placeholder="Search products..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
                 autoFocus
               />
               <button
                 onClick={handleSearch}
-                className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                className="bg-black text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm sm:text-base whitespace-nowrap"
               >
                 Search
               </button>
@@ -326,7 +334,7 @@ const Navbar = () => {
                   setSearchOpen(false);
                   setSearchQuery('');
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 flex-shrink-0"
               >
                 <X size={20} />
               </button>
@@ -412,6 +420,40 @@ const Navbar = () => {
           </div>
         )}
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {logoutModalOpen && (
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-[60] px-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-lg shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200 border border-gray-200">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
+              <LogOut className="text-red-600" size={24} />
+            </div>
+            
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Confirm Logout
+            </h3>
+            
+            <p className="text-gray-600 text-center mb-6">
+              Are you sure you want to logout? You'll need to sign in again to access your account.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setLogoutModalOpen(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
