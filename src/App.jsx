@@ -6,6 +6,7 @@ import "./App.css";
 import { UserProvider } from "./context/UserContext";
 import { ProductProvider } from "./context/ProductContext";
 import { CartProvider } from "./context/CartContext";
+import { OrderProvider } from "./context/OrderContext";
 
 // Components
 import Footer from "./components/footer/Footer";
@@ -28,6 +29,8 @@ import VerifyOTP from "./Auths/VerifyOtp";
 import Men from "./pages/Men";
 import Women from "./pages/Women";
 import Checkout from "./checkout/Checkout";
+import PaymentCallback from "./checkout/PaymentCallback";
+import OrderTracking from "./pages/OrderTracking";
 
 // Layout Component
 const Layout = ({ children }) => {
@@ -55,55 +58,61 @@ const AppRoutes = () => {
       <UserProvider>
         <ProductProvider>
           <CartProvider>
-            <Layout>
-              <Routes>
-                {/* Home Route */}
-                <Route path="/" element={<Home />} />
-                
-                {/* Category Pages */}
-                <Route path="/men" element={<Men />} />
-                <Route path="/women" element={<Women />} />
+            <OrderProvider>
+              <Layout>
+                <Routes>
+                  {/* Home Route */}
+                  <Route path="/" element={<Home />} />
+                  
+                  {/* Category Pages */}
+                  <Route path="/men" element={<Men />} />
+                  <Route path="/women" element={<Women />} />
 
-                {/* Auth Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/verify-otp" element={<VerifyOTP />} />
+                  {/* Auth Routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/verify-otp" element={<VerifyOTP />} />
 
-                {/* Shop Routes - IMPORTANT: Update these routes */}
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/shop/:category" element={<Shop />} />
-                <Route path="/shop/:category/:subcategory" element={<Shop />} />
+                  {/* Shop Routes */}
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/shop/:category" element={<Shop />} />
+                  <Route path="/shop/:category/:subcategory" element={<Shop />} />
 
-                {/* Cart Route */}
-                <Route path="/cart" element={<Cart />} />
+                  {/* Cart Route */}
+                  <Route path="/cart" element={<Cart />} />
 
-                {/* Checkout */}
-                 <Route path="/checkout" element={<Checkout />} />
+                  {/* Checkout */}
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/payment/callback" element={<PaymentCallback />} />
 
-                {/* Profile Route */}
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/admin" element={<AdminDashboard />} />
+                  {/* Profile Route */}
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
 
-                {/* Product Details Route */}
-                <Route path="/product/:slug" element={<ProductDetails />} />
+                  {/* Orders */}
+                  <Route path="/orders/track/:orderNumber" element={<OrderTracking />} />
 
-                {/* Size Guide page */}
-                <Route path="/sizeguide" element={<SizeGuide />} />
+                  {/* Product Details Route */}
+                  <Route path="/product/:slug" element={<ProductDetails />} />
 
-                {/* CustomerService page */}
-                <Route path="/support" element={<CustomerService />} />
+                  {/* Size Guide page */}
+                  <Route path="/sizeguide" element={<SizeGuide />} />
 
-                {/* ReturnAndExchange page */}
-                <Route
-                  path="/returnandexchange"
-                  element={<ReturnAndExchange />}
-                />
+                  {/* CustomerService page */}
+                  <Route path="/support" element={<CustomerService />} />
 
-                {/* 404 Not Found Route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Layout>
+                  {/* ReturnAndExchange page */}
+                  <Route
+                    path="/returnandexchange"
+                    element={<ReturnAndExchange />}
+                  />
+
+                  {/* 404 Not Found Route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Layout>
+            </OrderProvider>
           </CartProvider>
         </ProductProvider>
       </UserProvider>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Truck, Shield, Lock, User, Phone, Mail, Package, Check } from 'lucide-react';
+import { ArrowLeft, MapPin, Truck, Shield, Lock, User, Package } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { orderAPI } from '../api/api';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -9,7 +10,6 @@ const Checkout = () => {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
-  const [showPostPurchaseAccount, setShowPostPurchaseAccount] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -32,96 +32,59 @@ const Checkout = () => {
 
   const [formErrors, setFormErrors] = useState({});
 
-  // Shipping rates by location (Nigeria focused)
   const shippingRates = {
-    lagos: {
-      standard: 3000,
-      express: 5000
-    },
-    abuja: {
-      standard: 5000,
-      express: 8000
-    },
-    other: {
-      standard: 3000,
-      express: 6000
-    }
+    lagos: { standard: 3000, express: 5000 },
+    abuja: { standard: 5000, express: 8000 },
+    other: { standard: 3000, express: 6000 }
   };
 
-  // Calculate totals
   const subtotal = getCartSubtotal();
   const FREE_SHIPPING_THRESHOLD = 100000;
   
-  // Determine shipping cost based on location and delivery method
   const getShippingCost = () => {
     if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0;
-    
     const state = formData.state.toLowerCase();
     const deliveryMethod = formData.deliveryMethod;
     
-    if (state.includes('lagos')) {
-      return shippingRates.lagos[deliveryMethod];
-    } else if (state.includes('abuja') || state.includes('fct')) {
-      return shippingRates.abuja[deliveryMethod];
-    } else {
-      return shippingRates.other[deliveryMethod];
-    }
+    if (state.includes('lagos')) return shippingRates.lagos[deliveryMethod];
+    if (state.includes('abuja') || state.includes('fct')) return shippingRates.abuja[deliveryMethod];
+    return shippingRates.other[deliveryMethod];
   };
 
   const shippingCost = getShippingCost();
-  const vat = subtotal * 0.08; // 8% VAT
+  const vat = subtotal * 0.08;
   const total = subtotal + shippingCost + vat;
 
-  // Handle form changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error for this field
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (formErrors[name]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const handleAccountChange = (e) => {
     const { name, value } = e.target;
-    setAccountData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setAccountData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Validate form
   const validateForm = () => {
     const errors = {};
     const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'postalCode'];
     
     requiredFields.forEach(field => {
-      if (!formData[field].trim()) {
-        errors[field] = 'This field is required';
-      }
+      if (!formData[field].trim()) errors[field] = 'This field is required';
     });
     
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
+    if (!emailRegex.test(formData.email)) errors.email = 'Please enter a valid email address';
     
-    // Nigerian phone validation
     const phoneRegex = /^0[0-9]{10}$/;
     const cleanPhone = formData.phone.replace(/\s/g, '');
     if (!phoneRegex.test(cleanPhone)) {
       errors.phone = 'Please enter a valid Nigerian phone number (11 digits starting with 0)';
     }
     
-    // Password validation if creating account
     if (createAccount) {
       if (!accountData.password) {
         errors.password = 'Password is required';
@@ -140,10 +103,9 @@ const Checkout = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Prepare order data for backend
   const prepareOrderData = () => {
     const orderItems = cartItems.map(item => ({
-      productId: item._id,
+      product: item._id || item.id,
       name: item.name,
       quantity: item.quantity,
       price: item.salePrice || item.price,
@@ -159,10 +121,10 @@ const Checkout = () => {
         email: formData.email,
         phone: formData.phone,
         shippingAddress: {
-          address: formData.address,
+          street: formData.address,
           city: formData.city,
           state: formData.state,
-          postalCode: formData.postalCode,
+          zipCode: formData.postalCode,
           country: formData.country
         }
       },
@@ -188,8 +150,16 @@ const Checkout = () => {
     };
   };
 
-  // Handle checkout submission
-  const handleCheckout = async () => {
+  const handleCheckout = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Prevent double submission
+    if (isProcessing) {
+      console.log('Already processing, ignoring duplicate request');
+      return;
+    }
+
     if (!validateForm()) {
       alert('Please fix the errors in the form before proceeding.');
       return;
@@ -198,94 +168,36 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Prepare order data
       const orderData = prepareOrderData();
+      console.log('🛒 Initializing checkout...');
       
-      // Send order data to your backend
-      const response = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-      });
+      // ✅ NEW FLOW: Initialize checkout and payment in one step
+      const response = await orderAPI.initializeCheckout(orderData);
 
-      const result = await response.json();
+      if (response.success) {
+        console.log('✅ Checkout initialized successfully');
+        console.log('🔗 Payment URL:', response.data.authorizationUrl);
+        console.log('📝 Reference:', response.data.reference);
 
-      if (result.success) {
-        // If guest checkout and didn't create account, show post-purchase offer
-        if (!createAccount) {
-          setShowPostPurchaseAccount(true);
-        } else {
-          // Proceed to payment gateway
-          window.location.href = result.paymentUrl;
-        }
+        // Store reference in localStorage for tracking after payment
+        localStorage.setItem('pendingPaymentReference', response.data.reference);
+        localStorage.setItem('pendingPaymentEmail', formData.email);
+
+        // Clear cart before redirect
+        clearCart();
+
+        // Redirect to Paystack payment page
+        window.location.href = response.data.authorizationUrl;
       } else {
-        alert(result.message || 'Failed to create order. Please try again.');
+        throw new Error(response.message || 'Failed to initialize checkout');
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('An error occurred. Please try again.');
-    } finally {
+      alert(error.message || 'An error occurred. Please try again.');
       setIsProcessing(false);
     }
   };
 
-  // Handle post-purchase account creation
-  const handlePostPurchaseAccount = async () => {
-    if (!accountData.password) {
-      alert('Please enter a password');
-      return;
-    }
-    
-    if (accountData.password !== accountData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-    
-    if (accountData.password.length < 8) {
-      alert('Password must be at least 8 characters');
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      const response = await fetch('/api/auth/create-account-post-purchase', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: accountData.password
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Redirect to payment gateway
-        window.location.href = result.paymentUrl || '/payment';
-      } else {
-        alert(result.message || 'Failed to create account. Please try again.');
-      }
-    } catch (error) {
-      console.error('Account creation error:', error);
-      alert('An error occurred. Please try again.');
-    } finally {
-      setIsProcessing(false);
-      setShowPostPurchaseAccount(false);
-    }
-  };
-
-  // Skip account creation and proceed to payment
-  const handleSkipAccount = () => {
-    // Proceed to payment gateway (this would come from your backend)
-    window.location.href = '/payment-gateway';
-  };
-
-  // Nigerian states
   const nigerianStates = [
     'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
     'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT - Abuja', 'Gombe',
@@ -294,7 +206,6 @@ const Checkout = () => {
     'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
   ];
 
-  // Delivery method options
   const deliveryOptions = [
     {
       id: 'standard',
@@ -313,13 +224,34 @@ const Checkout = () => {
   ];
 
   if (cartItems.length === 0) {
-    navigate('/cart');
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Your cart is empty</p>
+          <button
+            onClick={() => navigate('/shop')}
+            className="mt-4 px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const hasUndefinedProducts = cartItems.some(item => !item.name || !item.price);
+  if (hasUndefinedProducts) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto w-11/12 py-6">
           <button
@@ -338,9 +270,7 @@ const Checkout = () => {
 
       <div className="container mx-auto w-11/12 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Customer Information */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Contact Information */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-6">
                 <User className="w-5 h-5 text-gray-600" />
@@ -428,7 +358,6 @@ const Checkout = () => {
                 )}
               </div>
 
-              {/* Optional Account Creation */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -487,7 +416,6 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* Shipping Address */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-6">
                 <MapPin className="w-5 h-5 text-gray-600" />
@@ -590,7 +518,6 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* Delivery Method */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-6">
                 <Truck className="w-5 h-5 text-gray-600" />
@@ -641,7 +568,6 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* Security Badges */}
             <div className="flex items-center justify-center gap-6 text-gray-600 bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5" />
@@ -658,24 +584,24 @@ const Checkout = () => {
             </div>
           </div>
 
-          {/* Right Column - Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg p-6 shadow-sm sticky top-4">
               <h2 className="text-xl font-bold text-gray-900 mb-6 uppercase tracking-wide">
                 Order Summary
               </h2>
 
-              {/* Order Items */}
               <div className="space-y-4 mb-6">
                 <h3 className="font-semibold text-gray-900">Items ({cartItems.length})</h3>
                 {cartItems.map(item => (
                   <div key={item.cartItemId} className="flex items-center gap-3">
                     <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.images[0]}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
+                      {item.images?.[0] && (
+                        <img
+                          src={item.images[0]}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
@@ -698,7 +624,6 @@ const Checkout = () => {
                 ))}
               </div>
 
-              {/* Summary Details */}
               <div className="space-y-3 mb-6 border-t pt-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
@@ -746,8 +671,8 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Checkout Button */}
               <button
+                type="button"
                 onClick={handleCheckout}
                 disabled={isProcessing}
                 className={`w-full py-4 rounded-lg font-semibold uppercase tracking-wide transition-all duration-300 ${
@@ -762,100 +687,20 @@ const Checkout = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Processing...
+                    Redirecting to payment...
                   </span>
                 ) : (
-                  'Complete Order'
+                  'Proceed to Payment'
                 )}
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-4">
-                By completing your order, you agree to our Terms of Service and Privacy Policy
+                You'll be redirected to Paystack for secure payment
               </p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Post-Purchase Account Creation Modal */}
-      {showPostPurchaseAccount && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <Check className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Order Submitted!</h3>
-                <p className="text-sm text-gray-600">Ready for payment</p>
-              </div>
-            </div>
-            
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-2">Create Your Account</h4>
-              <p className="text-sm text-gray-600">
-                Create a password to track your order and save your details for next time.
-                Your email is already saved: <span className="font-medium">{formData.email}</span>
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Create Password *
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={accountData.password}
-                  onChange={handleAccountChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition"
-                  placeholder="Minimum 8 characters"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password *
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={accountData.confirmPassword}
-                  onChange={handleAccountChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-8">
-              <button
-                onClick={handleSkipAccount}
-                className="flex-1 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                disabled={isProcessing}
-              >
-                Skip for now
-              </button>
-              
-              <button
-                onClick={handlePostPurchaseAccount}
-                disabled={isProcessing}
-                className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
-                  isProcessing
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-black text-white hover:bg-gray-800'
-                }`}
-              >
-                {isProcessing ? 'Creating...' : 'Create Account'}
-              </button>
-            </div>
-            
-            <p className="text-xs text-gray-500 text-center mt-4">
-              You can always create an account later using your order email
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

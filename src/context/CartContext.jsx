@@ -1,12 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getProductById } from '../data/ProductData';
 
-// Create Cart Context
 const CartContext = createContext();
 
-// Cart Provider Component
 export const CartProvider = ({ children }) => {
-  // We only store: productId, quantity, selectedSize, selectedColor
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem('hiveCart');
@@ -17,7 +13,6 @@ export const CartProvider = ({ children }) => {
     }
   });
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
     try {
       localStorage.setItem('hiveCart', JSON.stringify(cartItems));
@@ -26,37 +21,18 @@ export const CartProvider = ({ children }) => {
     }
   }, [cartItems]);
 
-  // Get full cart items with product details from ProductData
-  const getFullCartItems = () => {
-    return cartItems.map(item => {
-      const product = getProductById(item.productId);
-      if (!product) {
-        console.warn(`Product with ID ${item.productId} not found`);
-        return null;
-      }
-      return {
-        ...product,
-        cartItemId: item.cartItemId,
-        quantity: item.quantity,
-        selectedSize: item.selectedSize,
-        selectedColor: item.selectedColor,
-      };
-    }).filter(Boolean); // Remove any null items
-  };
-
-  // Add item to cart
-  const addToCart = (productId, selectedSize = null, selectedColor = null, quantity = 1) => {
+  // ✅ FIXED: Accept entire product object, not just ID
+  const addToCart = (product, selectedSize = null, selectedColor = null, quantity = 1) => {
     setCartItems((prevItems) => {
-      // Check if item with same productId, size, and color already exists
       const existingItemIndex = prevItems.findIndex(
         (item) =>
-          item.productId === productId &&
+          item._id === product._id &&
           item.selectedSize === selectedSize &&
           item.selectedColor === selectedColor
       );
 
       if (existingItemIndex !== -1) {
-        // Item exists, increase quantity
+        // Update quantity if item already exists
         const updatedItems = [...prevItems];
         updatedItems[existingItemIndex] = {
           ...updatedItems[existingItemIndex],
@@ -64,29 +40,27 @@ export const CartProvider = ({ children }) => {
         };
         return updatedItems;
       } else {
-        // New item, add to cart
+        // Add new item with full product data
         return [
           ...prevItems,
           {
-            productId,
+            ...product, // ✅ Store entire product object
             selectedSize,
             selectedColor,
             quantity,
-            cartItemId: `${productId}-${selectedSize}-${selectedColor}-${Date.now()}`,
+            cartItemId: `${product._id}-${selectedSize}-${selectedColor}-${Date.now()}`,
           },
         ];
       }
     });
   };
 
-  // Remove item from cart
   const removeFromCart = (cartItemId) => {
     setCartItems((prevItems) =>
       prevItems.filter((item) => item.cartItemId !== cartItemId)
     );
   };
 
-  // Update item quantity
   const updateQuantity = (cartItemId, newQuantity) => {
     if (newQuantity <= 0) {
       removeFromCart(cartItemId);
@@ -102,29 +76,23 @@ export const CartProvider = ({ children }) => {
     );
   };
 
-  // Clear entire cart
   const clearCart = () => {
     setCartItems([]);
   };
 
-  // Get total number of items in cart
   const getCartCount = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
-  // Get cart subtotal (before tax and shipping)
   const getCartSubtotal = () => {
-    const fullItems = getFullCartItems();
-    return fullItems.reduce((total, item) => {
+    return cartItems.reduce((total, item) => {
       const price = item.salePrice || item.price;
       return total + price * item.quantity;
     }, 0);
   };
 
-  // Get total savings from sale items
   const getTotalSavings = () => {
-    const fullItems = getFullCartItems();
-    return fullItems.reduce((savings, item) => {
+    return cartItems.reduce((savings, item) => {
       if (item.salePrice) {
         const discount = (item.price - item.salePrice) * item.quantity;
         return savings + discount;
@@ -133,8 +101,7 @@ export const CartProvider = ({ children }) => {
     }, 0);
   };
 
-  // Get cart total (with tax and shipping)
-  const getCartTotal = (taxRate = 0.08, shippingCost = 10, freeShippingThreshold = 100) => {
+  const getCartTotal = (taxRate = 0.08, shippingCost = 0, freeShippingThreshold = 100000) => {
     const subtotal = getCartSubtotal();
     const shipping = subtotal >= freeShippingThreshold ? 0 : shippingCost;
     const tax = subtotal * taxRate;
@@ -146,37 +113,28 @@ export const CartProvider = ({ children }) => {
     };
   };
 
-  // Check if product is in cart
+  // ✅ FIXED: Check using _id instead of productId
   const isInCart = (productId, selectedSize = null, selectedColor = null) => {
     return cartItems.some(
       (item) =>
-        item.productId === productId &&
+        item._id === productId &&
         (selectedSize === null || item.selectedSize === selectedSize) &&
         (selectedColor === null || item.selectedColor === selectedColor)
     );
   };
 
-  // Get specific item from cart
+  // ✅ FIXED: Get item using _id
   const getCartItem = (productId, selectedSize = null, selectedColor = null) => {
-    const cartItem = cartItems.find(
+    return cartItems.find(
       (item) =>
-        item.productId === productId &&
+        item._id === productId &&
         item.selectedSize === selectedSize &&
         item.selectedColor === selectedColor
     );
-    
-    if (!cartItem) return null;
-    
-    const product = getProductById(productId);
-    return {
-      ...product,
-      ...cartItem,
-    };
   };
 
   const value = {
-    cartItems: getFullCartItems(), // Always return full product details
-    rawCartItems: cartItems, // Raw cart items (just IDs and quantities)
+    cartItems, // ✅ Already contains full product data
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -192,7 +150,6 @@ export const CartProvider = ({ children }) => {
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
 
-// Custom hook to use cart context
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {

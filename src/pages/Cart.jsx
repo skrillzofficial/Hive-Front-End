@@ -7,15 +7,16 @@ const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, updateQuantity, removeFromCart, getCartSubtotal, getTotalSavings } = useCart();
 
-  // Calculate totals - FREE shipping for orders ₦100,000 and above
   const subtotal = getCartSubtotal();
   const FREE_SHIPPING_THRESHOLD = 100000;
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : null; 
-  const tax = subtotal * 0.05; // 5% VAT
+  const tax = subtotal * 0.08;
   const total = shipping === 0 ? subtotal + tax : subtotal + tax; 
   const totalSavings = getTotalSavings();
 
-  if (cartItems.length === 0) {
+  const hasUndefinedProducts = cartItems.some(item => !item.name || !item.price);
+
+  if (cartItems.length === 0 && !hasUndefinedProducts) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto w-11/12 py-16">
@@ -37,9 +38,19 @@ const Cart = () => {
     );
   }
 
+  if (hasUndefinedProducts) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading cart items...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto w-11/12 py-6">
           <button
@@ -58,24 +69,23 @@ const Cart = () => {
 
       <div className="container mx-auto w-11/12 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item) => (
               <div key={item.cartItemId} className="bg-white rounded-lg p-4 lg:p-6 shadow-sm">
                 <div className="flex gap-4 lg:gap-6">
-                  {/* Product Image */}
                   <Link 
                     to={`/product/${item.slug}`}
                     className="flex-shrink-0 w-24 h-24 lg:w-32 lg:h-32 bg-gray-100 rounded-lg overflow-hidden group"
                   >
-                    <img
-                      src={item.images[0]}
-                      alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {item.images?.[0] && (
+                      <img
+                        src={item.images[0]}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    )}
                   </Link>
 
-                  {/* Product Details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1 min-w-0 pr-4">
@@ -95,7 +105,6 @@ const Cart = () => {
                         </div>
                       </div>
                       
-                      {/* Remove Button */}
                       <button
                         onClick={() => removeFromCart(item.cartItemId)}
                         className="text-gray-400 hover:text-red-600 transition-colors p-1"
@@ -105,9 +114,7 @@ const Cart = () => {
                       </button>
                     </div>
 
-                    {/* Price and Quantity */}
                     <div className="flex items-center justify-between mt-4">
-                      {/* Quantity Controls */}
                       <div className="flex items-center border-2 border-gray-200 rounded-lg">
                         <button
                           onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
@@ -128,7 +135,6 @@ const Cart = () => {
                         </button>
                       </div>
 
-                      {/* Price */}
                       <div className="text-right">
                         {item.salePrice ? (
                           <div>
@@ -147,7 +153,6 @@ const Cart = () => {
                       </div>
                     </div>
 
-                    {/* Sale Badge */}
                     {item.salePrice && (
                       <div className="mt-3 inline-flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-semibold">
                         <Tag className="w-3 h-3" />
@@ -159,7 +164,6 @@ const Cart = () => {
               </div>
             ))}
 
-            {/* Continue Shopping Button - Mobile */}
             <button
               onClick={() => navigate('/shop')}
               className="lg:hidden w-full bg-gray-100 text-gray-900 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-300 uppercase tracking-wide"
@@ -168,14 +172,12 @@ const Cart = () => {
             </button>
           </div>
 
-          {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg p-6 shadow-sm sticky top-4">
               <h2 className="text-xl font-bold text-gray-900 mb-6 uppercase tracking-wide">
                 Order Summary
               </h2>
 
-              {/* Summary Details */}
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
@@ -248,7 +250,6 @@ const Cart = () => {
                 </div>
               </div>
 
-              {/* Checkout Button */}
               <button
                 onClick={() => navigate('/checkout')}
                 className="w-full bg-black text-white py-4 rounded-lg font-semibold hover:bg-gray-800 transition-all duration-300 uppercase tracking-wide mb-4"
@@ -256,7 +257,6 @@ const Cart = () => {
                 Proceed to Checkout
               </button>
 
-              {/* Continue Shopping - Desktop */}
               <button
                 onClick={() => navigate('/shop')}
                 className="hidden lg:block w-full bg-gray-100 text-gray-900 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-300 uppercase tracking-wide text-sm"
@@ -264,7 +264,6 @@ const Cart = () => {
                 Continue Shopping
               </button>
 
-              {/* Security Badges */}
               <div className="mt-6 pt-6 border-t">
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

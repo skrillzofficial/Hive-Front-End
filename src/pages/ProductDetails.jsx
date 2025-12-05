@@ -52,9 +52,8 @@ const ProductDetails = () => {
       return;
     }
     
-    for (let i = 0; i < quantity; i++) {
-      addToCart(product.id, selectedSize, selectedColor, 1);
-    }
+    // ✅ FIXED: Pass entire product object, not just ID
+    addToCart(product, selectedSize, selectedColor, quantity);
     
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
@@ -68,9 +67,8 @@ const ProductDetails = () => {
       return;
     }
     
-    for (let i = 0; i < quantity; i++) {
-      addToCart(product.id, selectedSize, selectedColor, 1);
-    }
+    // ✅ FIXED: Pass entire product object, not just ID
+    addToCart(product, selectedSize, selectedColor, quantity);
     
     navigate('/cart');
   };
@@ -128,7 +126,8 @@ const ProductDetails = () => {
     );
   }
 
-  const inCart = isInCart(product.id, selectedSize, selectedColor);
+  // ✅ FIXED: Check cart using _id instead of id
+  const inCart = isInCart(product._id, selectedSize, selectedColor);
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -46,7 +46,7 @@ const apiCall = async (endpoint, options = {}) => {
   return response.json();
 };
 
-// PRODUCT API - MATCHES YOUR BACKEND ROUTES EXACTLY
+// PRODUCT API
 export const productAPI = {
   // GET /products/all
   getAll: () => apiCall("/products/all"),
@@ -58,14 +58,14 @@ export const productAPI = {
   create: (formData) =>
     apiCall("/products/create", {
       method: "POST",
-      body: formData, // FormData with files
+      body: formData,
     }),
 
   // PATCH /products/:id (with FormData)
   update: (id, formData) =>
     apiCall(`/products/${id}`, {
       method: "PATCH", 
-      body: formData,  // FormData with files
+      body: formData,
     }),
 
   // DELETE /products/:id
@@ -194,4 +194,86 @@ export const userAPI = {
     apiCall(`/${id}`, {
       method: "DELETE",
     }),
+};
+
+// TRANSACTION API
+export const transactionAPI = {
+  // GET /transactions/verify/:reference
+  verify: (reference) => 
+    apiCall(`/transactions/verify/${reference}`),
+
+  // POST /transactions/webhook
+  webhook: (webhookData) =>
+    apiCall("/transactions/webhook", {
+      method: "POST",
+      body: JSON.stringify(webhookData),
+    }),
+
+  // GET /transactions (Admin only)
+  getAll: () => 
+    apiCall("/transactions"),
+
+  // GET /transactions/customer/:email (Admin only)
+  getByCustomer: (email) => 
+    apiCall(`/transactions/customer/${encodeURIComponent(email)}`),
+
+  // GET /transactions/revenue (Admin only)
+  getRevenue: () => 
+    apiCall("/transactions/revenue"),
+};
+
+// ORDER API
+export const orderAPI = {
+  // ✅ NEW: POST /orders/initialize-checkout (replaces /orders/create)
+  initializeCheckout: (orderData) =>
+    apiCall("/orders/initialize-checkout", {
+      method: "POST",
+      body: JSON.stringify(orderData),
+    }),
+
+  // POST /auth/create-account-post-purchase
+  createAccountAfterPurchase: (accountData) =>
+    apiCall("/auth/create-account-post-purchase", {
+      method: "POST",
+      body: JSON.stringify(accountData),
+    }),
+
+  // GET /orders/track/:orderNumber?email=xxx
+  trackByNumber: (orderNumber, email = null) => {
+    const queryParam = email ? `?email=${encodeURIComponent(email)}` : '';
+    return apiCall(`/orders/track/${orderNumber}${queryParam}`);
+  },
+
+  // GET /orders/my-orders (Protected - authenticated users)
+  getMyOrders: () => 
+    apiCall("/orders/my-orders"),
+
+  // GET /orders (Admin only)
+  getAll: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append('status', params.status);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    
+    const queryString = queryParams.toString();
+    return apiCall(`/orders${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // PATCH /orders/:id/status (Admin only)
+  updateStatus: (id, statusData) =>
+    apiCall(`/orders/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify(statusData),
+    }),
+
+  // GET /orders/customer/:email (Admin only)
+  searchByEmail: (email) => 
+    apiCall(`/orders/customer/${encodeURIComponent(email)}`),
+};
+
+export default {
+  productAPI,
+  userAPI,
+  transactionAPI,
+  orderAPI,
 };
