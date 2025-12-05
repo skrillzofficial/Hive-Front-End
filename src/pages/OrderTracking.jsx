@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, MapPin, Truck, CheckCircle, Clock, ArrowLeft, Search } from 'lucide-react';
+import { Package, MapPin, Truck, CheckCircle, Clock, ArrowLeft, Search, Mail } from 'lucide-react';
 import { orderAPI } from '../api/api';
 
 const OrderTracking = () => {
@@ -8,19 +8,33 @@ const OrderTracking = () => {
   const navigate = useNavigate();
   
   const [orderNumber, setOrderNumber] = useState(urlOrderNumber || '');
+  const [email, setEmail] = useState('');
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showEmailInput, setShowEmailInput] = useState(false);
 
   useEffect(() => {
     if (urlOrderNumber) {
-      fetchOrder(urlOrderNumber);
+      // If we have a logged-in user, we don't need email
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (token) {
+        fetchOrder(urlOrderNumber, null);
+      } else {
+        setShowEmailInput(true);
+      }
     }
   }, [urlOrderNumber]);
 
-  const fetchOrder = async (orderNum) => {
+  const fetchOrder = async (orderNum, userEmail = null) => {
     if (!orderNum || !orderNum.trim()) {
       setError('Please enter an order number');
+      return;
+    }
+
+    // For guest orders, email is required
+    if (!userEmail && !(localStorage.getItem('token') || sessionStorage.getItem('token'))) {
+      setError('Please provide the email used for this order');
       return;
     }
 
@@ -28,18 +42,19 @@ const OrderTracking = () => {
     setError(null);
 
     try {
-      console.log('Fetching order:', orderNum);
+      console.log('Fetching order:', orderNum, 'with email:', userEmail);
       
-      // 🔵 USED: orderAPI.trackByNumber() - GET /orders/track/:orderNumber
-      const response = await orderAPI.trackByNumber(orderNum.trim());
+      // Pass email for guest order verification
+      const response = await orderAPI.trackByNumber(orderNum.trim(), userEmail);
       
       console.log('Order response:', response);
 
-      if (response && (response.order || response.success)) {
-        setOrder(response.order || response);
+      if (response && (response.data || response.success)) {
+        setOrder(response.data || response);
         setError(null);
+        setShowEmailInput(false);
       } else {
-        setError('Order not found. Please check your order number.');
+        setError('Order not found. Please check your order number and email.');
         setOrder(null);
       }
     } catch (err) {
@@ -49,7 +64,10 @@ const OrderTracking = () => {
       if (err.message.includes('<!DOCTYPE')) {
         setError('Server error: Unable to connect to the API. Please check if the backend is running.');
       } else if (err.message.includes('404')) {
-        setError('Order not found. Please check your order number and try again.');
+        setError('Order not found. Please check your order number and email.');
+      } else if (err.message.includes('403')) {
+        setError('Not authorized. Please provide the email used for this order.');
+        setShowEmailInput(true);
       } else if (err.message.includes('Failed to fetch')) {
         setError('Network error: Unable to reach the server. Please check your connection.');
       } else {
@@ -65,9 +83,30 @@ const OrderTracking = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (orderNumber.trim()) {
-      // Update URL and fetch
-      navigate(`/orders/track/${orderNumber.trim()}`);
-      fetchOrder(orderNumber.trim());
+      // Check if user is logged in
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
+      if (token) {
+        // Logged in user - no email needed
+        navigate(`/orders/track/${orderNumber.trim()}`);
+        fetchOrder(orderNumber.trim(), null);
+      } else if (email.trim()) {
+        // Guest user with email
+        navigate(`/orders/track/${orderNumber.trim()}`);
+        fetchOrder(orderNumber.trim(), email.trim());
+      } else {
+        // Guest user without email - show email input
+        setError('Please provide the email used for this order');
+        setShowEmailInput(true);
+      }
+    }
+  };
+
+  // If we need email for verification
+  const handleEmailSubmit = (e) => {
+    e.preventDefault();
+    if (orderNumber.trim() && email.trim()) {
+      fetchOrder(orderNumber.trim(), email.trim());
     }
   };
 
@@ -111,6 +150,9 @@ const OrderTracking = () => {
     return statusColors[status?.toLowerCase()] || 'bg-gray-100 text-gray-800';
   };
 
+  // Check if user is logged in
+  const isLoggedIn = !!localStorage.getItem('token') || !!sessionStorage.getItem('token');
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto w-11/12 max-w-4xl">
@@ -126,30 +168,103 @@ const OrderTracking = () => {
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 uppercase tracking-wide">
             Track Your Order
           </h1>
-          <p className="text-gray-600 mt-2">Enter your order number to track its status</p>
+          <p className="text-gray-600 mt-2">
+            {isLoggedIn 
+              ? "Enter your order number to track its status" 
+              : "Enter your order number and email to track your order"
+            }
+          </p>
         </div>
 
         {/* Search Form */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <form onSubmit={handleSearch} className="flex gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="Enter order number (e.g., ORD-12345)"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              <Search className="w-5 h-5" />
-              Track Order
-            </button>
-          </form>
+          {showEmailInput ? (
+            // Email verification form
+            <form onSubmit={handleEmailSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Order Number
+                </label>
+                <input
+                  type="text"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  placeholder="Enter order number (e.g., ORD-12345)"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition"
+                  disabled={loading}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter the email used for this order"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition"
+                    disabled={loading}
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Please provide the email address you used when placing the order.
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  type="submit"
+                  disabled={loading || !orderNumber.trim() || !email.trim()}
+                  className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  <Search className="w-5 h-5" />
+                  {loading ? 'Verifying...' : 'Verify and Track'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEmailInput(false);
+                    setError(null);
+                  }}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            // Normal search form
+            <form onSubmit={handleSearch} className="flex flex-col gap-4">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={orderNumber}
+                    onChange={(e) => setOrderNumber(e.target.value)}
+                    placeholder="Enter order number (e.g., ORD-12345)"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  <Search className="w-5 h-5" />
+                  Track Order
+                </button>
+              </div>
+              {!isLoggedIn && (
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  <span className="text-yellow-600 font-medium">Note:</span>
+                  <span>Guest orders require email verification. You'll be asked to provide your email if needed.</span>
+                </div>
+              )}
+            </form>
+          )}
         </div>
 
         {/* Loading State */}
@@ -161,23 +276,34 @@ const OrderTracking = () => {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             </div>
-            <p className="text-gray-600">Fetching your order...</p>
+            <p className="text-gray-600">
+              {showEmailInput ? 'Verifying your order...' : 'Fetching your order...'}
+            </p>
           </div>
         )}
 
         {/* Error State */}
         {error && !loading && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <div className="text-red-600 mb-2">
-              <svg className="w-12 h-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-lg font-semibold mb-2">Unable to Find Order</h3>
-              <p className="text-sm">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <div className="flex items-start gap-3">
+              <div className="text-red-600 flex-shrink-0 mt-1">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Unable to Find Order</h3>
+                <p className="text-sm text-red-800 mb-3">{error}</p>
+                {error.includes('Not authorized') && !showEmailInput && (
+                  <button
+                    onClick={() => setShowEmailInput(true)}
+                    className="px-4 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 transition"
+                  >
+                    Provide Email Address
+                  </button>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-gray-600 mt-4">
-              Make sure you entered the correct order number from your confirmation email.
-            </p>
           </div>
         )}
 
@@ -288,7 +414,7 @@ const OrderTracking = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Order Items</h3>
               <div className="space-y-4">
-                {order.orderDetails?.items?.map((item, index) => (
+                {order.items?.map((item, index) => (
                   <div key={index} className="flex items-center gap-4 pb-4 border-b last:border-b-0">
                     <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                       <img
@@ -300,7 +426,7 @@ const OrderTracking = () => {
                     <div className="flex-1">
                       <h4 className="font-semibold text-gray-900">{item.name}</h4>
                       <p className="text-sm text-gray-600">
-                        Size: {item.size}
+                        {item.size && `Size: ${item.size}`}
                         {item.color && ` • Color: ${item.color}`}
                       </p>
                       <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
@@ -325,7 +451,7 @@ const OrderTracking = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-semibold">
-                    ₦{order.orderDetails?.subtotal?.toLocaleString('en-NG', {
+                    ₦{order.subtotal?.toLocaleString('en-NG', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
                     })}
@@ -334,10 +460,10 @@ const OrderTracking = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Shipping</span>
                   <span className="font-semibold">
-                    {order.orderDetails?.shippingCost === 0 ? (
+                    {order.shippingCost === 0 || order.shippingFee === 0 ? (
                       <span className="text-green-600">FREE</span>
                     ) : (
-                      `₦${order.orderDetails?.shippingCost?.toLocaleString('en-NG', {
+                      `₦${(order.shippingCost || order.shippingFee || 0)?.toLocaleString('en-NG', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                       })}`
@@ -347,7 +473,7 @@ const OrderTracking = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">VAT</span>
                   <span className="font-semibold">
-                    ₦{order.orderDetails?.vat?.toLocaleString('en-NG', {
+                    ₦{order.tax?.toLocaleString('en-NG', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
                     })}
@@ -356,7 +482,7 @@ const OrderTracking = () => {
                 <div className="flex justify-between pt-4 border-t">
                   <span className="text-lg font-bold text-gray-900">Total</span>
                   <span className="text-xl font-bold text-gray-900">
-                    ₦{order.orderDetails?.total?.toLocaleString('en-NG', {
+                    ₦{order.total?.toLocaleString('en-NG', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
                     })}
