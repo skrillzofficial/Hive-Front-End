@@ -171,13 +171,13 @@ const Checkout = () => {
       const orderData = prepareOrderData();
       console.log('🛒 Initializing checkout...');
       
-      // ✅ NEW FLOW: Initialize checkout and payment in one step
+      //  Initialize checkout and payment in one step
       const response = await orderAPI.initializeCheckout(orderData);
 
       if (response.success) {
-        console.log('✅ Checkout initialized successfully');
-        console.log('🔗 Payment URL:', response.data.authorizationUrl);
-        console.log('📝 Reference:', response.data.reference);
+        console.log(' Checkout initialized successfully');
+        console.log(' Payment URL:', response.data.authorizationUrl);
+        console.log(' Reference:', response.data.reference);
 
         // Store reference in localStorage for tracking after payment
         localStorage.setItem('pendingPaymentReference', response.data.reference);

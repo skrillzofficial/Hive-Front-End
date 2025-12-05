@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader, Package, ArrowRight, Mail } from 'lucide-react';
+import { transactionAPI } from '../api/api'; 
 
 const PaymentCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [paymentStatus, setPaymentStatus] = useState('verifying'); 
+  const [paymentStatus, setPaymentStatus] = useState('verifying');
   const [orderData, setOrderData] = useState(null);
   const [error, setError] = useState('');
 
@@ -24,15 +25,8 @@ const PaymentCallback = () => {
     }
 
     try {
-      // Call backend to verify payment
-      const response = await fetch(`/api/transactions/verify/${reference}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
+      // Use the transactionAPI from your api.js
+      const result = await transactionAPI.verify(reference);
 
       if (result.success) {
         setPaymentStatus('success');
@@ -50,7 +44,7 @@ const PaymentCallback = () => {
     } catch (error) {
       console.error('Payment verification error:', error);
       setPaymentStatus('failed');
-      setError('An error occurred while verifying your payment. Please contact support.');
+      setError(error.message || 'An error occurred while verifying your payment. Please contact support.');
     }
   };
 
