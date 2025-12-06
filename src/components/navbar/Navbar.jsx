@@ -334,7 +334,7 @@ const Navbar = () => {
                   setSearchOpen(false);
                   setSearchQuery('');
                 }}
-                className="text-gray-500 hover:text-gray-700 flex-shrink-0"
+                className="text-gray-500 hover:text-gray-700 shrink-0"
               >
                 <X size={20} />
               </button>
@@ -423,7 +423,7 @@ const Navbar = () => {
 
       {/* Logout Confirmation Modal */}
       {logoutModalOpen && (
-        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-[60] px-4">
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-60 px-4">
           <div className="bg-white/95 backdrop-blur-md rounded-lg shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200 border border-gray-200">
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
               <LogOut className="text-red-600" size={24} />

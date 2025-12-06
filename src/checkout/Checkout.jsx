@@ -193,17 +193,10 @@ const Checkout = () => {
 
     try {
       const orderData = prepareOrderData();
-      console.log('🛒 Initializing checkout...');
-      console.log('👤 User logged in?', !!user);
-      console.log('👤 User ID:', user?._id);
-      console.log('📧 Order email:', orderData.customerInfo.email);
       
       const response = await orderAPI.initializeCheckout(orderData);
 
       if (response.success) {
-        console.log('✅ Checkout initialized successfully');
-        console.log('🔗 Payment URL:', response.data.authorizationUrl);
-        console.log('📋 Reference:', response.data.reference);
 
         localStorage.setItem('pendingPaymentReference', response.data.reference);
         localStorage.setItem('pendingPaymentEmail', formData.email);
@@ -734,7 +727,7 @@ const Checkout = () => {
                 )}
 
                 <div className="flex justify-between text-gray-600">
-                  <span>VAT (8%)</span>
+                  <span>VAT (5%)</span>
                   <span className="font-semibold text-gray-900">
                     ₦{vat.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>

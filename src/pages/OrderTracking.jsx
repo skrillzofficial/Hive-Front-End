@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, MapPin, Truck, CheckCircle, Clock, ArrowLeft, Search, Mail } from 'lucide-react';
+import { Package, MapPin, Truck, CheckCircle, Clock, ArrowLeft, Search, Mail, AlertCircle, XCircle } from 'lucide-react';
 import { orderAPI } from '../api/api';
 
 const OrderTracking = () => {
@@ -118,13 +118,26 @@ const OrderTracking = () => {
       { id: 'delivered', label: 'Delivered', icon: <CheckCircle className="w-5 h-5" /> }
     ];
 
-    const statusOrder = ['pending', 'processing', 'shipped', 'delivered'];
-    const currentIndex = statusOrder.indexOf(order?.status?.toLowerCase() || 'pending');
+    // Determine current step based on deliveryStatus
+    const deliveryStatus = order?.deliveryStatus?.toLowerCase();
+    
+    // Map deliveryStatus to step index
+    const statusMap = {
+      'pending': 0,
+      'processing': 1,
+      'shipped': 2,
+      'delivered': 3,
+      'cancelled': -1 // Special case for cancelled orders
+    };
+
+    // For cancelled orders, don't show any completed steps
+    const currentStepIndex = deliveryStatus === 'cancelled' ? -1 : (statusMap[deliveryStatus] || 0);
 
     return steps.map((step, index) => ({
       ...step,
-      completed: index <= currentIndex,
-      active: index === currentIndex
+      completed: index <= currentStepIndex && currentStepIndex >= 0,
+      active: index === currentStepIndex,
+      cancelled: deliveryStatus === 'cancelled'
     }));
   };
 
@@ -141,13 +154,35 @@ const OrderTracking = () => {
 
   const getStatusColor = (status) => {
     const statusColors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
+      // Order status values
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'confirmed': 'bg-blue-100 text-blue-800',
+      'processing': 'bg-blue-100 text-blue-800',
+      'completed': 'bg-green-100 text-green-800',
+      'cancelled': 'bg-red-100 text-red-800',
+      
+      // Delivery status values
+      'shipped': 'bg-purple-100 text-purple-800',
+      'delivered': 'bg-green-100 text-green-800',
     };
     return statusColors[status?.toLowerCase()] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return <AlertCircle className="w-4 h-4" />;
+      case 'processing':
+        return <Clock className="w-4 h-4" />;
+      case 'shipped':
+        return <Truck className="w-4 h-4" />;
+      case 'delivered':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'cancelled':
+        return <XCircle className="w-4 h-4" />;
+      default:
+        return null;
+    }
   };
 
   // Check if user is logged in
@@ -286,7 +321,7 @@ const OrderTracking = () => {
         {error && !loading && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="flex items-start gap-3">
-              <div className="text-red-600 flex-shrink-0 mt-1">
+              <div className="text-red-600 shrink-0 mt-1">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -321,23 +356,35 @@ const OrderTracking = () => {
                     Placed on {formatDate(order.createdAt)}
                   </p>
                 </div>
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold uppercase ${getStatusColor(order.status)}`}>
-                  {order.status}
-                </span>
+                <div className="flex flex-col gap-2 items-end">
+                  <span className={`px-4 py-2 rounded-full text-sm font-semibold uppercase ${getStatusColor(order.status)} flex items-center gap-2`}>
+                    {getStatusIcon(order.status)}
+                    Order Status: {order.status}
+                  </span>
+                  {order.deliveryStatus && (
+                    <span className={`px-4 py-2 rounded-full text-sm font-semibold uppercase ${getStatusColor(order.deliveryStatus)} flex items-center gap-2`}>
+                      {getStatusIcon(order.deliveryStatus)}
+                      Delivery: {order.deliveryStatus}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Status Timeline */}
+              {/* Delivery Status Timeline */}
               <div className="mt-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Delivery Progress</h3>
                 <div className="flex justify-between items-center">
                   {getStatusSteps().map((step, index) => (
                     <React.Fragment key={step.id}>
-                      <div className="flex flex-col items-center flex-1">
+                      <div className="flex flex-col items-center flex-1 relative">
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                            step.completed
+                          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all z-10 relative ${
+                            step.cancelled
+                              ? 'bg-gray-200 text-gray-400'
+                              : step.completed
                               ? 'bg-black text-white'
                               : step.active
-                              ? 'bg-black text-white'
+                              ? 'bg-black text-white ring-4 ring-black ring-opacity-20'
                               : 'bg-gray-200 text-gray-400'
                           }`}
                         >
@@ -345,24 +392,72 @@ const OrderTracking = () => {
                         </div>
                         <p
                           className={`text-xs mt-2 text-center font-medium ${
-                            step.completed || step.active
+                            step.cancelled
+                              ? 'text-gray-400'
+                              : step.completed || step.active
                               ? 'text-gray-900'
                               : 'text-gray-400'
                           }`}
                         >
                           {step.label}
                         </p>
+                        {step.active && order.deliveryStatus !== 'cancelled' && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Current Status
+                          </p>
+                        )}
                       </div>
                       {index < getStatusSteps().length - 1 && (
                         <div
                           className={`h-1 flex-1 -mt-6 transition-all ${
-                            step.completed ? 'bg-black' : 'bg-gray-200'
+                            step.cancelled
+                              ? 'bg-gray-200'
+                              : step.completed
+                              ? 'bg-black'
+                              : 'bg-gray-200'
                           }`}
                         />
                       )}
                     </React.Fragment>
                   ))}
                 </div>
+                
+                {/* Tracking Information */}
+                {(order.deliveryStatus === 'shipped' || order.deliveryStatus === 'delivered') && (
+                  <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                      <Truck className="w-5 h-5" />
+                      Shipping Information
+                    </h4>
+                    {order.trackingNumber && (
+                      <p className="text-sm text-blue-800 mb-1">
+                        <span className="font-medium">Tracking Number:</span> {order.trackingNumber}
+                      </p>
+                    )}
+                    {order.estimatedDelivery && (
+                      <p className="text-sm text-blue-800">
+                        <span className="font-medium">Estimated Delivery:</span> {formatDate(order.estimatedDelivery)}
+                      </p>
+                    )}
+                    {order.deliveryMethod && (
+                      <p className="text-sm text-blue-800 mt-1">
+                        <span className="font-medium">Delivery Method:</span> {order.deliveryMethod}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {order.deliveryStatus === 'cancelled' && (
+                  <div className="mt-8 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
+                      <XCircle className="w-5 h-5" />
+                      Order Cancelled
+                    </h4>
+                    <p className="text-sm text-red-800">
+                      This order has been cancelled. Please contact support if you have any questions.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -399,13 +494,29 @@ const OrderTracking = () => {
                   Shipping Address
                 </h3>
                 <div className="space-y-1 text-sm">
-                  <p className="font-medium">{order.customerInfo?.shippingAddress?.address}</p>
-                  <p className="text-gray-600">
-                    {order.customerInfo?.shippingAddress?.city},{' '}
-                    {order.customerInfo?.shippingAddress?.state}{' '}
-                    {order.customerInfo?.shippingAddress?.postalCode}
-                  </p>
-                  <p className="text-gray-600">{order.customerInfo?.shippingAddress?.country}</p>
+                  {order.customerInfo?.shippingAddress ? (
+                    <>
+                      <p className="font-medium">{order.customerInfo.shippingAddress.street}</p>
+                      <p className="text-gray-600">
+                        {order.customerInfo.shippingAddress.city},{' '}
+                        {order.customerInfo.shippingAddress.state}{' '}
+                        {order.customerInfo.shippingAddress.zipCode}
+                      </p>
+                      <p className="text-gray-600">{order.customerInfo.shippingAddress.country}</p>
+                    </>
+                  ) : order.customerInfo?.address ? (
+                    <>
+                      <p className="font-medium">{order.customerInfo.address}</p>
+                      <p className="text-gray-600">
+                        {order.customerInfo.city},{' '}
+                        {order.customerInfo.state}{' '}
+                        {order.customerInfo.postalCode}
+                      </p>
+                      <p className="text-gray-600">{order.customerInfo.country || 'Nigeria'}</p>
+                    </>
+                  ) : (
+                    <p className="text-gray-600">No shipping address provided</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -416,7 +527,7 @@ const OrderTracking = () => {
               <div className="space-y-4">
                 {order.items?.map((item, index) => (
                   <div key={index} className="flex items-center gap-4 pb-4 border-b last:border-b-0">
-                    <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                    <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden shrink-0">
                       <img
                         src={item.image || '/placeholder-image.jpg'}
                         alt={item.name}

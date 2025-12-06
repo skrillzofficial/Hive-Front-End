@@ -64,7 +64,6 @@ const VerifyOTP = () => {
 
   // Handle OTP input change
   const handleChange = (index, value) => {
-    // Only allow numbers
     if (value && !/^\d$/.test(value)) {
       return;
     }
