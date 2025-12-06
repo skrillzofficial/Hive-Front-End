@@ -119,57 +119,57 @@ export const productAPI = {
 // USER API 
 export const userAPI = {
   register: (userData) =>
-    apiCall("/register", {
+    apiCall("/user/register", {
       method: "POST",
       body: JSON.stringify(userData),
     }),
 
   login: (credentials) =>
-    apiCall("/login", {
+    apiCall("/user/login", {
       method: "POST",
       body: JSON.stringify(credentials),
     }),
 
   verifyEmail: (otpData) =>
-    apiCall("/verify-email", {
+    apiCall("/user/verify-email", {
       method: "POST",
       body: JSON.stringify(otpData),
     }),
 
   resendOTP: (phoneData) =>
-    apiCall("/resend-otp", {
+    apiCall("/user/resend-otp", {
       method: "POST",
       body: JSON.stringify(phoneData),
     }),
 
   forgotPassword: (emailData) =>
-    apiCall("/forgot-password", {
+    apiCall("/user/forgot-password", {
       method: "POST",
       body: JSON.stringify(emailData),
     }),
 
   verifyResetOTP: (otpData) =>
-    apiCall("/verify-reset-otp", {
+    apiCall("/user/verify-reset-otp", {
       method: "POST",
       body: JSON.stringify(otpData),
     }),
 
   resetPassword: (passwordData) =>
-    apiCall("/reset-password", {
+    apiCall("/user/reset-password", {
       method: "POST",
       body: JSON.stringify(passwordData),
     }),
 
-  getMe: () => apiCall("/me"),
+  getMe: () => apiCall("/user/me"),
 
   updateProfile: (userData) =>
-    apiCall("/profile", {
+    apiCall("/user/profile", {
       method: "PATCH",
       body: JSON.stringify(userData),
     }),
 
   updatePassword: (passwordData) =>
-    apiCall("/password", {
+    apiCall("/user/password", {
       method: "PATCH",
       body: JSON.stringify(passwordData),
     }),
@@ -177,21 +177,21 @@ export const userAPI = {
   getAllUsers: () => apiCall("/"),
 
   createAdmin: (adminData) =>
-    apiCall("/admin", {
+    apiCall("/user/admin", {
       method: "POST",
       body: JSON.stringify(adminData),
     }),
 
-  getUser: (id) => apiCall(`/${id}`),
+  getUser: (id) => apiCall(`/user/${id}`),
 
   updateUser: (id, userData) =>
-    apiCall(`/${id}`, {
+    apiCall(`/user/${id}`, {
       method: "PATCH",
       body: JSON.stringify(userData),
     }),
 
   deleteUser: (id) =>
-    apiCall(`/${id}`, {
+    apiCall(`/user/${id}`, {
       method: "DELETE",
     }),
 };
@@ -224,7 +224,7 @@ export const transactionAPI = {
 
 // ORDER API
 export const orderAPI = {
-  // ✅ NEW: POST /orders/initialize-checkout (replaces /orders/create)
+  //  POST /orders/initialize-checkout 
   initializeCheckout: (orderData) =>
     apiCall("/orders/initialize-checkout", {
       method: "POST",

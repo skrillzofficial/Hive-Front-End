@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Truck, Shield, Lock, User, Package } from 'lucide-react';
+import { ArrowLeft, MapPin, Truck, Shield, Lock, User, Package, LogOut } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
 import { orderAPI } from '../api/api';
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, getCartSubtotal, clearCart } = useCart();
+  const { user, logout } = useUser();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
@@ -31,6 +33,26 @@ const Checkout = () => {
   });
 
   const [formErrors, setFormErrors] = useState({});
+
+  // Pre-fill form if user is logged in
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        city: user.city || '',
+        state: user.state || '',
+        postalCode: user.postalCode || ''
+      }));
+      
+      // Don't show create account option for logged-in users
+      setCreateAccount(false);
+    }
+  }, [user]);
 
   const shippingRates = {
     lagos: { standard: 3000, express: 5000 },
@@ -85,7 +107,8 @@ const Checkout = () => {
       errors.phone = 'Please enter a valid Nigerian phone number (11 digits starting with 0)';
     }
     
-    if (createAccount) {
+    // Only validate account creation if user is NOT logged in AND wants to create account
+    if (!user && createAccount) {
       if (!accountData.password) {
         errors.password = 'Password is required';
       } else if (accountData.password.length < 8) {
@@ -129,9 +152,10 @@ const Checkout = () => {
         }
       },
       accountOptions: {
-        createAccount,
-        password: createAccount ? accountData.password : undefined
+        createAccount: !user && createAccount,
+        password: (!user && createAccount) ? accountData.password : undefined
       },
+      userId: user?._id || null,
       orderDetails: {
         items: orderItems,
         subtotal,
@@ -145,7 +169,8 @@ const Checkout = () => {
       metadata: {
         orderDate: new Date().toISOString(),
         itemsCount: cartItems.length,
-        totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0)
+        totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+        isLoggedInUser: !!user
       }
     };
   };
@@ -154,7 +179,6 @@ const Checkout = () => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Prevent double submission
     if (isProcessing) {
       console.log('Already processing, ignoring duplicate request');
       return;
@@ -170,31 +194,37 @@ const Checkout = () => {
     try {
       const orderData = prepareOrderData();
       console.log('🛒 Initializing checkout...');
+      console.log('👤 User logged in?', !!user);
+      console.log('👤 User ID:', user?._id);
+      console.log('📧 Order email:', orderData.customerInfo.email);
       
-      //  Initialize checkout and payment in one step
       const response = await orderAPI.initializeCheckout(orderData);
 
       if (response.success) {
-        console.log(' Checkout initialized successfully');
-        console.log(' Payment URL:', response.data.authorizationUrl);
-        console.log(' Reference:', response.data.reference);
+        console.log('✅ Checkout initialized successfully');
+        console.log('🔗 Payment URL:', response.data.authorizationUrl);
+        console.log('📋 Reference:', response.data.reference);
 
-        // Store reference in localStorage for tracking after payment
         localStorage.setItem('pendingPaymentReference', response.data.reference);
         localStorage.setItem('pendingPaymentEmail', formData.email);
 
-        // Clear cart before redirect
         clearCart();
 
-        // Redirect to Paystack payment page
         window.location.href = response.data.authorizationUrl;
       } else {
         throw new Error(response.message || 'Failed to initialize checkout');
       }
     } catch (error) {
-      console.error('Checkout error:', error);
+      console.error('❌ Checkout error:', error);
       alert(error.message || 'An error occurred. Please try again.');
       setIsProcessing(false);
+    }
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      logout();
+      navigate('/');
     }
   };
 
@@ -227,6 +257,7 @@ const Checkout = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
+          <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-600">Your cart is empty</p>
           <button
             onClick={() => navigate('/shop')}
@@ -254,27 +285,70 @@ const Checkout = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b">
         <div className="container mx-auto w-11/12 py-6">
-          <button
-            onClick={() => navigate('/cart')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Cart
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigate('/cart')}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Cart
+            </button>
+            
+            {user && (
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-gray-600">
+                  Welcome back, <span className="font-semibold">{user.firstName}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <LogOut size={14} />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+          
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 uppercase tracking-wide">
             Checkout
           </h1>
           <p className="text-gray-600 mt-2">Complete your order with secure checkout</p>
+          
+          {user && (
+            <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-blue-800">
+                    You're logged in as {user.email}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Your order will be linked to your account for easy tracking.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="container mx-auto w-11/12 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
+            {/* Contact Information */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-6">
-                <User className="w-5 h-5 text-gray-600" />
-                <h2 className="text-xl font-bold text-gray-900">Contact Information</h2>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-gray-600" />
+                  <h2 className="text-xl font-bold text-gray-900">Contact Information</h2>
+                </div>
+                
+                {user && (
+                  <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                    Logged In
+                  </span>
+                )}
               </div>
               
               <div className="mb-6">
@@ -286,9 +360,10 @@ const Checkout = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
+                  disabled={user}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition ${
                     formErrors.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                   required
                 />
                 {formErrors.email && (
@@ -309,9 +384,10 @@ const Checkout = () => {
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
+                    disabled={user}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition ${
                       formErrors.firstName ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    } ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     required
                   />
                   {formErrors.firstName && (
@@ -327,9 +403,10 @@ const Checkout = () => {
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
+                    disabled={user}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition ${
                       formErrors.lastName ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    } ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     required
                   />
                   {formErrors.lastName && (
@@ -358,64 +435,68 @@ const Checkout = () => {
                 )}
               </div>
 
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={createAccount}
-                    onChange={(e) => setCreateAccount(e.target.checked)}
-                    className="h-5 w-5 mt-0.5"
-                  />
-                  <div>
-                    <span className="font-medium text-gray-900">Create an account for faster checkout next time</span>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Save your shipping details and track orders easily
-                    </p>
-                  </div>
-                </label>
-                
-                {createAccount && (
-                  <div className="mt-4 space-y-4">
+              {/* Only show "Create Account" section if user is NOT logged in */}
+              {!user && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={createAccount}
+                      onChange={(e) => setCreateAccount(e.target.checked)}
+                      className="h-5 w-5 mt-0.5"
+                    />
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Create Password *
-                      </label>
-                      <input
-                        type="password"
-                        name="password"
-                        value={accountData.password}
-                        onChange={handleAccountChange}
-                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition ${
-                          formErrors.password ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="Minimum 8 characters"
-                      />
-                      {formErrors.password && (
-                        <p className="text-red-500 text-sm mt-1">{formErrors.password}</p>
-                      )}
+                      <span className="font-medium text-gray-900">Create an account for faster checkout next time</span>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Save your shipping details and track orders easily
+                      </p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Confirm Password *
-                      </label>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={accountData.confirmPassword}
-                        onChange={handleAccountChange}
-                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition ${
-                          formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {formErrors.confirmPassword && (
-                        <p className="text-red-500 text-sm mt-1">{formErrors.confirmPassword}</p>
-                      )}
+                  </label>
+                  
+                  {createAccount && (
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Create Password *
+                        </label>
+                        <input
+                          type="password"
+                          name="password"
+                          value={accountData.password}
+                          onChange={handleAccountChange}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition ${
+                            formErrors.password ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Minimum 8 characters"
+                        />
+                        {formErrors.password && (
+                          <p className="text-red-500 text-sm mt-1">{formErrors.password}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Confirm Password *
+                        </label>
+                        <input
+                          type="password"
+                          name="confirmPassword"
+                          value={accountData.confirmPassword}
+                          onChange={handleAccountChange}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition ${
+                            formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {formErrors.confirmPassword && (
+                          <p className="text-red-500 text-sm mt-1">{formErrors.confirmPassword}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
 
+            {/* Shipping Address */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-6">
                 <MapPin className="w-5 h-5 text-gray-600" />
@@ -518,6 +599,7 @@ const Checkout = () => {
               </div>
             </div>
 
+            {/* Delivery Method */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-6">
                 <Truck className="w-5 h-5 text-gray-600" />
@@ -568,6 +650,7 @@ const Checkout = () => {
               </div>
             </div>
 
+            {/* Security Badges */}
             <div className="flex items-center justify-center gap-6 text-gray-600 bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5" />
@@ -584,6 +667,7 @@ const Checkout = () => {
             </div>
           </div>
 
+          {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg p-6 shadow-sm sticky top-4">
               <h2 className="text-xl font-bold text-gray-900 mb-6 uppercase tracking-wide">
@@ -687,15 +771,15 @@ const Checkout = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Redirecting to payment...
+                    {user ? 'Processing Order...' : 'Redirecting to payment...'}
                   </span>
                 ) : (
-                  'Proceed to Payment'
+                  user ? 'Place Order (Logged In)' : 'Proceed to Payment'
                 )}
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-4">
-                You'll be redirected to Paystack for secure payment
+                {user ? 'Your order will be linked to your account' : 'You\'ll be redirected to Paystack for secure payment'}
               </p>
             </div>
           </div>
