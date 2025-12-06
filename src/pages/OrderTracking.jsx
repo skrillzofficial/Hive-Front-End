@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, MapPin, Truck, CheckCircle, Clock, ArrowLeft, Search, Mail, AlertCircle, XCircle } from 'lucide-react';
+import { Package, MapPin, Truck, CheckCircle, Clock, ArrowLeft, Search, Mail } from 'lucide-react';
 import { orderAPI } from '../api/api';
 
 const OrderTracking = () => {
@@ -16,7 +16,6 @@ const OrderTracking = () => {
 
   useEffect(() => {
     if (urlOrderNumber) {
-      // If we have a logged-in user, we don't need email
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (token) {
         fetchOrder(urlOrderNumber, null);
@@ -32,7 +31,6 @@ const OrderTracking = () => {
       return;
     }
 
-    // For guest orders, email is required
     if (!userEmail && !(localStorage.getItem('token') || sessionStorage.getItem('token'))) {
       setError('Please provide the email used for this order');
       return;
@@ -42,13 +40,8 @@ const OrderTracking = () => {
     setError(null);
 
     try {
-      console.log('Fetching order:', orderNum, 'with email:', userEmail);
-      
-      // Pass email for guest order verification
       const response = await orderAPI.trackByNumber(orderNum.trim(), userEmail);
       
-      console.log('Order response:', response);
-
       if (response && (response.data || response.success)) {
         setOrder(response.data || response);
         setError(null);
@@ -58,22 +51,7 @@ const OrderTracking = () => {
         setOrder(null);
       }
     } catch (err) {
-      console.error('Fetch order error:', err);
-      
-      // Better error handling
-      if (err.message.includes('<!DOCTYPE')) {
-        setError('Server error: Unable to connect to the API. Please check if the backend is running.');
-      } else if (err.message.includes('404')) {
-        setError('Order not found. Please check your order number and email.');
-      } else if (err.message.includes('403')) {
-        setError('Not authorized. Please provide the email used for this order.');
-        setShowEmailInput(true);
-      } else if (err.message.includes('Failed to fetch')) {
-        setError('Network error: Unable to reach the server. Please check your connection.');
-      } else {
-        setError(err.message || 'Failed to fetch order. Please try again.');
-      }
-      
+      setError(err.message || 'Failed to fetch order. Please try again.');
       setOrder(null);
     } finally {
       setLoading(false);
@@ -83,26 +61,21 @@ const OrderTracking = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (orderNumber.trim()) {
-      // Check if user is logged in
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       
       if (token) {
-        // Logged in user - no email needed
         navigate(`/orders/track/${orderNumber.trim()}`);
         fetchOrder(orderNumber.trim(), null);
       } else if (email.trim()) {
-        // Guest user with email
         navigate(`/orders/track/${orderNumber.trim()}`);
         fetchOrder(orderNumber.trim(), email.trim());
       } else {
-        // Guest user without email - show email input
         setError('Please provide the email used for this order');
         setShowEmailInput(true);
       }
     }
   };
 
-  // If we need email for verification
   const handleEmailSubmit = (e) => {
     e.preventDefault();
     if (orderNumber.trim() && email.trim()) {
@@ -118,19 +91,16 @@ const OrderTracking = () => {
       { id: 'delivered', label: 'Delivered', icon: <CheckCircle className="w-5 h-5" /> }
     ];
 
-    // Determine current step based on deliveryStatus
-    const deliveryStatus = order?.deliveryStatus?.toLowerCase();
+    const deliveryStatus = order?.deliveryStatus?.toLowerCase() || 'pending';
     
-    // Map deliveryStatus to step index
     const statusMap = {
       'pending': 0,
       'processing': 1,
       'shipped': 2,
       'delivered': 3,
-      'cancelled': -1 // Special case for cancelled orders
+      'cancelled': -1
     };
 
-    // For cancelled orders, don't show any completed steps
     const currentStepIndex = deliveryStatus === 'cancelled' ? -1 : (statusMap[deliveryStatus] || 0);
 
     return steps.map((step, index) => ({
@@ -154,44 +124,20 @@ const OrderTracking = () => {
 
   const getStatusColor = (status) => {
     const statusColors = {
-      // Order status values
       'pending': 'bg-yellow-100 text-yellow-800',
-      'confirmed': 'bg-blue-100 text-blue-800',
       'processing': 'bg-blue-100 text-blue-800',
-      'completed': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800',
-      
-      // Delivery status values
       'shipped': 'bg-purple-100 text-purple-800',
       'delivered': 'bg-green-100 text-green-800',
+      'cancelled': 'bg-red-100 text-red-800',
     };
     return statusColors[status?.toLowerCase()] || 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return <AlertCircle className="w-4 h-4" />;
-      case 'processing':
-        return <Clock className="w-4 h-4" />;
-      case 'shipped':
-        return <Truck className="w-4 h-4" />;
-      case 'delivered':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'cancelled':
-        return <XCircle className="w-4 h-4" />;
-      default:
-        return null;
-    }
-  };
-
-  // Check if user is logged in
   const isLoggedIn = !!localStorage.getItem('token') || !!sessionStorage.getItem('token');
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto w-11/12 max-w-4xl">
-        {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/')}
@@ -211,10 +157,8 @@ const OrderTracking = () => {
           </p>
         </div>
 
-        {/* Search Form */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           {showEmailInput ? (
-            // Email verification form
             <form onSubmit={handleEmailSubmit}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -271,7 +215,6 @@ const OrderTracking = () => {
               </div>
             </form>
           ) : (
-            // Normal search form
             <form onSubmit={handleSearch} className="flex flex-col gap-4">
               <div className="flex gap-4">
                 <div className="flex-1">
@@ -302,7 +245,6 @@ const OrderTracking = () => {
           )}
         </div>
 
-        {/* Loading State */}
         {loading && (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <div className="flex justify-center mb-4">
@@ -317,7 +259,6 @@ const OrderTracking = () => {
           </div>
         )}
 
-        {/* Error State */}
         {error && !loading && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="flex items-start gap-3">
@@ -342,10 +283,8 @@ const OrderTracking = () => {
           </div>
         )}
 
-        {/* Order Details */}
         {order && !loading && !error && (
           <div className="space-y-6">
-            {/* Order Header */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div>
@@ -357,20 +296,12 @@ const OrderTracking = () => {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 items-end">
-                  <span className={`px-4 py-2 rounded-full text-sm font-semibold uppercase ${getStatusColor(order.status)} flex items-center gap-2`}>
-                    {getStatusIcon(order.status)}
-                    Order Status: {order.status}
+                  <span className={`px-4 py-2 rounded-full text-sm font-semibold uppercase ${getStatusColor(order.deliveryStatus)}`}>
+                    Delivery Status: {order.deliveryStatus}
                   </span>
-                  {order.deliveryStatus && (
-                    <span className={`px-4 py-2 rounded-full text-sm font-semibold uppercase ${getStatusColor(order.deliveryStatus)} flex items-center gap-2`}>
-                      {getStatusIcon(order.deliveryStatus)}
-                      Delivery: {order.deliveryStatus}
-                    </span>
-                  )}
                 </div>
               </div>
 
-              {/* Delivery Status Timeline */}
               <div className="mt-8">
                 <h3 className="text-lg font-bold text-gray-900 mb-6">Delivery Progress</h3>
                 <div className="flex justify-between items-center">
@@ -422,8 +353,7 @@ const OrderTracking = () => {
                   ))}
                 </div>
                 
-                {/* Tracking Information */}
-                {(order.deliveryStatus === 'shipped' || order.deliveryStatus === 'delivered') && (
+                {order.deliveryStatus === 'shipped' || order.deliveryStatus === 'delivered' ? (
                   <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
                       <Truck className="w-5 h-5" />
@@ -445,25 +375,20 @@ const OrderTracking = () => {
                       </p>
                     )}
                   </div>
-                )}
-                
-                {order.deliveryStatus === 'cancelled' && (
+                ) : order.deliveryStatus === 'cancelled' ? (
                   <div className="mt-8 bg-red-50 border border-red-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
-                      <XCircle className="w-5 h-5" />
+                    <h4 className="font-semibold text-red-900 mb-2">
                       Order Cancelled
                     </h4>
                     <p className="text-sm text-red-800">
                       This order has been cancelled. Please contact support if you have any questions.
                     </p>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
 
-            {/* Customer & Shipping Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Customer Information */}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Package className="w-5 h-5" />
@@ -487,7 +412,6 @@ const OrderTracking = () => {
                 </div>
               </div>
 
-              {/* Shipping Address */}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
@@ -521,7 +445,6 @@ const OrderTracking = () => {
               </div>
             </div>
 
-            {/* Order Items */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Order Items</h3>
               <div className="space-y-4">
@@ -557,7 +480,6 @@ const OrderTracking = () => {
                 ))}
               </div>
 
-              {/* Order Summary */}
               <div className="mt-6 pt-6 border-t space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal</span>
@@ -602,7 +524,6 @@ const OrderTracking = () => {
               </div>
             </div>
 
-            {/* Help Section */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
               <h3 className="font-semibold text-gray-900 mb-2">Need Help?</h3>
               <p className="text-sm text-gray-600 mb-4">
