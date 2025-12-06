@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X, LogOut, Package, Heart, Settings } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, LogOut, Package, Settings } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useUser } from '../../context/UserContext';
 import HiveLogo from '../../assets/images/Hive logo.png';
+import { toast } from 'react-toastify';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -21,11 +22,6 @@ const Navbar = () => {
 
   // Get user data from UserContext
   const { user, isAuthenticated, logout: contextLogout } = useUser();
-
-  // Debug: Log user state changes
-  useEffect(() => {
-    console.log('User state changed:', { user, isAuthenticated });
-  }, [user, isAuthenticated]);
 
   // Close search when clicking outside
   useEffect(() => {
@@ -74,6 +70,9 @@ const Navbar = () => {
       navigate(`/shop?search=${searchQuery}`);
       setSearchQuery('');
       setSearchOpen(false);
+      toast.info(`Searching for "${searchQuery}"`);
+    } else {
+      toast.warning('Please enter a search term');
     }
   };
 
@@ -82,6 +81,7 @@ const Navbar = () => {
     contextLogout();
     setLogoutModalOpen(false);
     setUserDropdownOpen(false);
+    toast.success('Successfully logged out');
     navigate('/');
   };
 
@@ -98,7 +98,6 @@ const Navbar = () => {
   const getUserDisplayName = () => {
     if (!user) return 'User';
     
-    // Try different possible name fields
     if (user.name) return user.name;
     if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
     if (user.firstName) return user.firstName;
@@ -220,23 +219,17 @@ const Navbar = () => {
                         My Profile
                       </Link>
                       
-                      <Link
-                        to="/profile/orders"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => setUserDropdownOpen(false)}
-                      >
-                        <Package size={16} className="mr-3" />
-                        My Orders
-                      </Link>
-                      
-                      <Link
-                        to="/profile/wishlist"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => setUserDropdownOpen(false)}
-                      >
-                        <Heart size={16} className="mr-3" />
-                        Wishlist
-                      </Link>
+                      {/* Only show My Orders for non-admin users */}
+                      {!isAdmin && (
+                        <Link
+                          to="/my-orders"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          <Package size={16} className="mr-3" />
+                          My Orders
+                        </Link>
+                      )}
                       
                       <div className="border-t border-gray-200 mt-2 pt-2">
                         <button

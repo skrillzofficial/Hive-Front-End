@@ -31,6 +31,8 @@ import Women from "./pages/Women";
 import Checkout from "./checkout/Checkout";
 import PaymentCallback from "./checkout/PaymentCallback";
 import OrderTracking from "./pages/OrderTracking";
+import UserOrders from "./pages/UserOrder";
+
 
 // Layout Component
 const Layout = ({ children }) => {
@@ -89,6 +91,7 @@ const AppRoutes = () => {
                   {/* Profile Route */}
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/my-orders" element={<UserOrders/>} />
 
                   {/* Orders */}
                   <Route path="/orders/track/:orderNumber" element={<OrderTracking />} />
