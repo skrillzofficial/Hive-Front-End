@@ -318,7 +318,7 @@ const Checkout = () => {
           {user && (
             <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="flex items-start gap-2">
-                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <Shield className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-blue-800">
                     You're logged in as {user.email}
@@ -678,7 +678,7 @@ const Checkout = () => {
                 <h3 className="font-semibold text-gray-900">Items ({cartItems.length})</h3>
                 {cartItems.map(item => (
                   <div key={item.cartItemId} className="flex items-center gap-3">
-                    <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden shrink-0">
                       {item.images?.[0] && (
                         <img
                           src={item.images[0]}
