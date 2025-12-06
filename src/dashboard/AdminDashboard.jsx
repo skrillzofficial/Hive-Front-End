@@ -26,8 +26,8 @@ import {
 import { useProducts } from "../context/ProductContext";
 import ProductForm from "./ProductForm";
 import { orderAPI, transactionAPI } from "../api/api";
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -71,12 +71,12 @@ const AdminDashboard = () => {
     try {
       // 1. Fetch revenue data
       const revenueResponse = await transactionAPI.getRevenue();
-      
+
       if (revenueResponse.success) {
         const revenueData = revenueResponse.data;
         setRevenueData(revenueData);
-        
-        setStats(prev => ({
+
+        setStats((prev) => ({
           ...prev,
           totalRevenue: revenueData.successfulRevenue || 0,
           totalOrders: revenueData.totalTransactions || 0,
@@ -88,7 +88,7 @@ const AdminDashboard = () => {
 
       // 2. Fetch recent orders
       const ordersResponse = await orderAPI.getAll({ page: 1, limit: 10 });
-      
+
       if (ordersResponse.success) {
         setRecentOrders(ordersResponse.data || []);
         setAllOrders(ordersResponse.data || []);
@@ -96,11 +96,10 @@ const AdminDashboard = () => {
 
       // 3. Fetch all orders for analysis
       const allOrdersResponse = await orderAPI.getAll({ limit: 100 });
-      
+
       if (allOrdersResponse.success && allOrdersResponse.data) {
         calculateTopProducts(allOrdersResponse.data);
       }
-
     } catch (error) {
       setDataError(error.message || "Failed to load dashboard data");
       toast.error("Failed to load dashboard data");
@@ -112,22 +111,22 @@ const AdminDashboard = () => {
   // Calculate top selling products from orders
   const calculateTopProducts = (orders) => {
     const productSales = {};
-    
-    orders.forEach(order => {
+
+    orders.forEach((order) => {
       if (order.items && Array.isArray(order.items)) {
-        order.items.forEach(item => {
+        order.items.forEach((item) => {
           if (!productSales[item.product]) {
             productSales[item.product] = {
               id: item.product,
               name: item.name || `Product ${item.product}`,
               sales: 0,
               revenue: 0,
-              quantity: 0
+              quantity: 0,
             };
           }
-          
+
           productSales[item.product].sales += 1;
-          productSales[item.product].revenue += (item.price * item.quantity);
+          productSales[item.product].revenue += item.price * item.quantity;
           productSales[item.product].quantity += item.quantity;
         });
       }
@@ -146,7 +145,7 @@ const AdminDashboard = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    setStats(prev => ({
+    setStats((prev) => ({
       ...prev,
       totalProducts: products.length,
     }));
@@ -154,21 +153,23 @@ const AdminDashboard = () => {
 
   // Helper function to format date
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-NG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return date.toLocaleDateString("en-NG", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   // Helper function to format currency
   const formatCurrency = (amount) => {
-    return `₦${amount?.toLocaleString('en-NG', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }) || '0'}`;
+    return `₦${
+      amount?.toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }) || "0"
+    }`;
   };
 
   const getStatusColor = (status) => {
@@ -253,11 +254,10 @@ const AdminDashboard = () => {
         await createProduct(formData);
         toast.success("Product created successfully!");
       }
-      
+
       setShowProductForm(false);
       setEditingProduct(null);
       await fetchProducts();
-      
     } catch (error) {
       toast.error(`Failed to save product: ${error.message}`);
     }
@@ -271,7 +271,7 @@ const AdminDashboard = () => {
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm("Are you sure you want to delete this product?"))
       return;
-    
+
     try {
       await deleteProduct(productId);
       toast.success("Product deleted successfully!");
@@ -284,7 +284,9 @@ const AdminDashboard = () => {
   // Handle order status update
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
-      const response = await orderAPI.updateStatus(orderId, { status: newStatus });
+      const response = await orderAPI.updateStatus(orderId, {
+        status: newStatus,
+      });
       if (response.success) {
         toast.success("Order status updated successfully!");
         fetchDashboardData();
@@ -357,15 +359,21 @@ const AdminDashboard = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Successful</span>
-                  <span className="font-semibold">{stats.successfulTransactions || 0}</span>
+                  <span className="font-semibold">
+                    {stats.successfulTransactions || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Pending</span>
-                  <span className="font-semibold">{stats.pendingTransactions || 0}</span>
+                  <span className="font-semibold">
+                    {stats.pendingTransactions || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Failed</span>
-                  <span className="font-semibold">{stats.failedTransactions || 0}</span>
+                  <span className="font-semibold">
+                    {stats.failedTransactions || 0}
+                  </span>
                 </div>
               </div>
             </div>
@@ -378,7 +386,9 @@ const AdminDashboard = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Total Revenue</span>
-                  <span className="font-semibold">{formatCurrency(stats.totalRevenue)}</span>
+                  <span className="font-semibold">
+                    {formatCurrency(stats.totalRevenue)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Total Transactions</span>
@@ -387,10 +397,9 @@ const AdminDashboard = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Avg. Order Value</span>
                   <span className="font-semibold">
-                    {stats.totalOrders > 0 
+                    {stats.totalOrders > 0
                       ? formatCurrency(stats.totalRevenue / stats.totalOrders)
-                      : formatCurrency(0)
-                    }
+                      : formatCurrency(0)}
                   </span>
                 </div>
               </div>
@@ -438,15 +447,23 @@ const AdminDashboard = () => {
               {recentOrders.length > 0 ? (
                 <div className="space-y-4">
                   {recentOrders.slice(0, 5).map((order) => (
-                    <div key={order._id} className="flex items-center justify-between pb-4 border-b border-gray-200 last:border-0">
+                    <div
+                      key={order._id}
+                      className="flex items-center justify-between pb-4 border-b border-gray-200 last:border-0"
+                    >
                       <div>
-                        <p className="font-medium text-black">{order.orderNumber}</p>
+                        <p className="font-medium text-black">
+                          {order.orderNumber}
+                        </p>
                         <p className="text-sm text-gray-600">
-                          {order.customerInfo?.firstName} {order.customerInfo?.lastName}
+                          {order.customerInfo?.firstName}{" "}
+                          {order.customerInfo?.lastName}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-black">{formatCurrency(order.total)}</p>
+                        <p className="font-semibold text-black">
+                          {formatCurrency(order.total)}
+                        </p>
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(
                             order.status
@@ -460,7 +477,9 @@ const AdminDashboard = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-4">No recent orders found</p>
+                <p className="text-gray-500 text-center py-4">
+                  No recent orders found
+                </p>
               )}
               {recentOrders.length > 5 && (
                 <button
@@ -499,7 +518,7 @@ const AdminDashboard = () => {
           </button>
         </div>
       </div>
-      
+
       {loadingData ? (
         <div className="p-8 text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
@@ -547,8 +566,11 @@ const AdminDashboard = () => {
                       {order.orderNumber}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {order.customerInfo?.firstName} {order.customerInfo?.lastName}
-                      <div className="text-xs text-gray-500">{order.customerInfo?.email}</div>
+                      {order.customerInfo?.firstName}{" "}
+                      {order.customerInfo?.lastName}
+                      <div className="text-xs text-gray-500">
+                        {order.customerInfo?.email}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {formatDate(order.createdAt)}
@@ -561,21 +583,30 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4">
                       <select
-                        value={order.status || 'pending'}
-                        onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} border-0 focus:ring-2 focus:ring-black outline-none cursor-pointer`}
+                        value={order.status || "pending"}
+                        onChange={(e) =>
+                          handleUpdateOrderStatus(order._id, e.target.value)
+                        }
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          order.status
+                        )} border-0 focus:ring-2 focus:ring-black outline-none cursor-pointer`}
                       >
                         <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
                         <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
+                        <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => window.open(`/orders/track/${order.orderNumber}`, '_blank')}
+                          onClick={() =>
+                            window.open(
+                              `/orders/track/${order.orderNumber}`,
+                              "_blank"
+                            )
+                          }
                           className="p-1 hover:bg-gray-100 rounded text-gray-600"
                           title="View Order"
                         >
@@ -584,7 +615,9 @@ const AdminDashboard = () => {
                         <button
                           className="p-1 hover:bg-gray-100 rounded text-blue-600"
                           title="Edit Order"
-                          onClick={() => toast.info('Edit order functionality coming soon')}
+                          onClick={() =>
+                            toast.info("Edit order functionality coming soon")
+                          }
                         >
                           <Edit size={16} />
                         </button>
@@ -602,15 +635,22 @@ const AdminDashboard = () => {
               <div key={order._id} className="p-4 hover:bg-gray-50">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="font-semibold text-black text-sm">{order.orderNumber}</p>
+                    <p className="font-semibold text-black text-sm">
+                      {order.orderNumber}
+                    </p>
                     <p className="text-xs text-gray-600 mt-1">
-                      {order.customerInfo?.firstName} {order.customerInfo?.lastName}
+                      {order.customerInfo?.firstName}{" "}
+                      {order.customerInfo?.lastName}
                     </p>
                   </div>
                   <select
-                    value={order.status || 'pending'}
-                    onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} border-0 focus:ring-2 focus:ring-black outline-none cursor-pointer`}
+                    value={order.status || "pending"}
+                    onChange={(e) =>
+                      handleUpdateOrderStatus(order._id, e.target.value)
+                    }
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      order.status
+                    )} border-0 focus:ring-2 focus:ring-black outline-none cursor-pointer`}
                   >
                     <option value="pending">Pending</option>
                     <option value="processing">Processing</option>
@@ -621,7 +661,9 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <div>
-                    <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(order.createdAt)}
+                    </p>
                     <p className="font-semibold text-black mt-1">
                       {formatCurrency(order.total)}
                     </p>
@@ -631,7 +673,12 @@ const AdminDashboard = () => {
                   </div>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => window.open(`/orders/track/${order.orderNumber}`, '_blank')}
+                      onClick={() =>
+                        window.open(
+                          `/orders/track/${order.orderNumber}`,
+                          "_blank"
+                        )
+                      }
                       className="p-2 hover:bg-gray-100 rounded text-gray-600"
                       title="View"
                     >
@@ -640,7 +687,9 @@ const AdminDashboard = () => {
                     <button
                       className="p-2 hover:bg-gray-100 rounded text-blue-600"
                       title="Edit"
-                      onClick={() => toast.info('Edit order functionality coming soon')}
+                      onClick={() =>
+                        toast.info("Edit order functionality coming soon")
+                      }
                     >
                       <Edit size={16} />
                     </button>
@@ -686,7 +735,9 @@ const AdminDashboard = () => {
             </div>
           ) : productsError ? (
             <div className="p-8 text-center">
-              <p className="text-red-600">Error loading products: {productsError}</p>
+              <p className="text-red-600">
+                Error loading products: {productsError}
+              </p>
               <button
                 onClick={fetchProducts}
                 className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
@@ -697,7 +748,9 @@ const AdminDashboard = () => {
           ) : products.length === 0 ? (
             <div className="p-8 text-center">
               <Package size={48} className="mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500">No products found. Add your first product!</p>
+              <p className="text-gray-500">
+                No products found. Add your first product!
+              </p>
             </div>
           ) : (
             <>
@@ -736,7 +789,9 @@ const AdminDashboard = () => {
                               />
                             )}
                             <div>
-                              <p className="font-medium text-black">{product.name}</p>
+                              <p className="font-medium text-black">
+                                {product.name}
+                              </p>
                               <p className="text-xs text-gray-500 truncate max-w-xs">
                                 {product.description}
                               </p>
@@ -747,21 +802,29 @@ const AdminDashboard = () => {
                           {formatCurrency(product.price)}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                            product.stock > 10 ? 'bg-green-100 text-green-800' : 
-                            product.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 
-                            'bg-red-100 text-red-800'
-                          }`}>
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                              product.stock > 10
+                                ? "bg-green-100 text-green-800"
+                                : product.stock > 0
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
                             {product.stock} in stock
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                            product.status === 'active' ? 'bg-green-100 text-green-800' : 
-                            product.status === 'draft' ? 'bg-gray-100 text-gray-800' : 
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {product.status || 'draft'}
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                              product.status === "active"
+                                ? "bg-green-100 text-green-800"
+                                : product.status === "draft"
+                                ? "bg-gray-100 text-gray-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {product.status || "draft"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm">
@@ -801,7 +864,9 @@ const AdminDashboard = () => {
                         />
                       )}
                       <div className="flex-1">
-                        <p className="font-semibold text-black text-sm">{product.name}</p>
+                        <p className="font-semibold text-black text-sm">
+                          {product.name}
+                        </p>
                         <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                           {product.description}
                         </p>
@@ -809,23 +874,31 @@ const AdminDashboard = () => {
                           <span className="font-medium text-black text-sm">
                             {formatCurrency(product.price)}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            product.stock > 10 ? 'bg-green-100 text-green-800' : 
-                            product.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 
-                            'bg-red-100 text-red-800'
-                          }`}>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              product.stock > 10
+                                ? "bg-green-100 text-green-800"
+                                : product.stock > 0
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
                             {product.stock} in stock
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                        product.status === 'active' ? 'bg-green-100 text-green-800' : 
-                        product.status === 'draft' ? 'bg-gray-100 text-gray-800' : 
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {product.status || 'draft'}
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                          product.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : product.status === "draft"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {product.status || "draft"}
                       </span>
                       <div className="flex items-center gap-1">
                         <button
@@ -876,9 +949,11 @@ const AdminDashboard = () => {
       <div className="p-6">
         <div className="text-center py-8">
           <Users size={48} className="mx-auto mb-4 text-gray-300" />
-          <p className="text-gray-500">Customer management features are under development</p>
+          <p className="text-gray-500">
+            Customer management features are under development
+          </p>
           <button
-            onClick={() => toast.info('Feature coming soon!')}
+            onClick={() => toast.info("Feature coming soon!")}
             className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
           >
             View Customer Analytics
@@ -890,7 +965,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ToastContainer 
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
@@ -902,7 +977,7 @@ const AdminDashboard = () => {
         pauseOnHover
         theme="light"
       />
-      
+
       <div className="flex">
         {/* Mobile Menu Button */}
         <button
