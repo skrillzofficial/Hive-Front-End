@@ -10,7 +10,7 @@ const Cart = () => {
   const subtotal = getCartSubtotal();
   const FREE_SHIPPING_THRESHOLD = 100000;
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : null; 
-  const tax = subtotal * 0.08;
+  const tax = subtotal * 0.05;
   const total = shipping === 0 ? subtotal + tax : subtotal + tax; 
   const totalSavings = getTotalSavings();
 
@@ -75,7 +75,7 @@ const Cart = () => {
                 <div className="flex gap-4 lg:gap-6">
                   <Link 
                     to={`/product/${item.slug}`}
-                    className="flex-shrink-0 w-24 h-24 lg:w-32 lg:h-32 bg-gray-100 rounded-lg overflow-hidden group"
+                    className="shrink-0 w-24 h-24 lg:w-32 lg:h-32 bg-gray-100 rounded-lg overflow-hidden group"
                   >
                     {item.images?.[0] && (
                       <img
@@ -123,7 +123,7 @@ const Cart = () => {
                         >
                           <Minus className="w-4 h-4" />
                         </button>
-                        <span className="px-4 py-2 font-semibold min-w-[3rem] text-center">
+                        <span className="px-4 py-2 font-semibold min-w-12 text-center">
                           {item.quantity}
                         </span>
                         <button
@@ -219,7 +219,7 @@ const Cart = () => {
                 )}
 
                 <div className="flex justify-between text-gray-600">
-                  <span>VAT (8%)</span>
+                  <span>VAT (5%)</span>
                   <span className="font-semibold text-gray-900">
                     ₦{tax.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
