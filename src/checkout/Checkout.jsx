@@ -74,7 +74,7 @@ const Checkout = () => {
   };
 
   const shippingCost = getShippingCost();
-  const vat = subtotal * 0.08;
+  const vat = subtotal * 0.05;
   const total = subtotal + shippingCost + vat;
 
   const handleChange = (e) => {
